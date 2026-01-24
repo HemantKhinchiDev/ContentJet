@@ -7,10 +7,11 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
-export interface AuthContextValue {
-  status: AuthStatus;
+export type AuthContextValue = {
+  status: "auth" | "guest";
   user: AuthUser | null;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
-}
+  signIn(): Promise<void>;
+  signOut(): Promise<void>;
+};
+
 

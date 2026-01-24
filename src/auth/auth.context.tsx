@@ -2,12 +2,14 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { AuthContextValue } from "./auth.types";
-import { createFakeAuth } from "./adapters/fake.auth";
+import { createAuthAdapter } from "./index";
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [auth] = useState(() => createFakeAuth());
+  const [auth] = useState(() => createAuthAdapter());
+
 
   return (
     <AuthContext.Provider value={auth}>
