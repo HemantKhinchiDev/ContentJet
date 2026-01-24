@@ -1,44 +1,31 @@
 "use client";
 
-import { CreateProjectCTA } from "@/components/projects/create-project-cta";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState } from "react";
+import { AuthGateModal } from "@/components/auth/AuthGateModal";
 
-export default function DashboardHome() {
+
+export default function DashboardPage() {
+  // 🚨 TEMPORARY UI-ONLY FLAG (Step 5.7.a)
+  // This will be REMOVED in Step 5.7.b (Supabase Auth)
+  const [isLoggedIn] = useState(false);
+
+  if (!isLoggedIn) {
+    return (
+      <AuthGateModal
+        open={true}
+        onClose={() => {
+          // do nothing for now
+        }}
+      />
+    );
+  }
+
   return (
-    <>
-      {/* Dashboard Stats */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Projects</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-bold">12</CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Words Generated</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-bold">48,200</CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Plans</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-bold">3</CardContent>
-        </Card>
-      </div>
-
-      {/* Create Project CTA */}
-      <div className="mt-6">
-        <CreateProjectCTA />
-      </div>
-    </>
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <p className="text-muted-foreground mt-2">
+        Logged-in dashboard content will render here.
+      </p>
+    </div>
   );
 }
