@@ -1,9 +1,24 @@
-import Header from "../../components/dashboard/header";
+"use client";
+
+import { useEffect, useState } from "react";
+import Header from "@/components/dashboard/header";
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // DEV MODE: bypass auth completely
+    setReady(true);
+  }, []);
+
+  if (!ready) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 border-r p-4">
