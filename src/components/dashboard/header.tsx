@@ -17,7 +17,7 @@ export default function Header() {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUser({
-          email: data.user.email,
+          email: data.user.email ?? null, // ✅ FIX HERE
           avatarUrl:
             data.user.user_metadata?.avatar_url ||
             data.user.user_metadata?.picture ||
@@ -33,15 +33,13 @@ export default function Header() {
     window.location.href = "/login";
   };
 
-  const letter =
-    user?.email?.charAt(0).toUpperCase() ?? "?";
+  const letter = user?.email?.charAt(0).toUpperCase() ?? "?";
 
   return (
     <header className="h-14 border-b px-6 flex items-center justify-between">
       <div className="font-semibold">Dashboard</div>
 
       <div className="flex items-center gap-3">
-        {/* Avatar */}
         {user?.avatarUrl ? (
           <img
             src={user.avatarUrl}
@@ -54,12 +52,10 @@ export default function Header() {
           </div>
         )}
 
-        {/* Email */}
         <span className="text-sm text-muted-foreground">
           {user?.email}
         </span>
 
-        {/* Logout */}
         <button
           onClick={logout}
           className="text-sm px-3 py-1 rounded border hover:bg-gray-100"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
@@ -12,7 +12,10 @@ import { Separator } from "@/components/ui/separator";
 
 type Mode = "signin" | "signup";
 
-export default function LoginPage() {
+/* ------------------------------
+   Inner component (uses search params)
+-------------------------------- */
+function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -199,5 +202,16 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/* ------------------------------
+   Page (Suspense boundary)
+-------------------------------- */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

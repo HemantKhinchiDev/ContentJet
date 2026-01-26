@@ -8,6 +8,8 @@ let fakeUser: AuthUser | null = {
 
 export function createFakeAuth(): AuthContextValue {
   return {
+    ready: true,
+
     status: fakeUser ? "auth" : "guest",
     user: fakeUser,
 

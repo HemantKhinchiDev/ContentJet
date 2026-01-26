@@ -38,7 +38,8 @@ export function AuthGateModal({ open, onClose }: AuthGateModalProps) {
             Sign up
           </Button>
 
-          <Button variant="ghost" className="w-full">
+          {/* 🔧 FIX HERE: ghost → outline */}
+          <Button variant="outline" className="w-full">
             Login
           </Button>
         </CardContent>
