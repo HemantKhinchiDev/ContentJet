@@ -1,18 +1,71 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-// import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+
+type Mode = "signin" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get("redirect") || "/dashboard";
 
+  const [mode, setMode] = useState<Mode>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const supabase = supabaseBrowser();
+
+  const handleEmailAuth = async () => {
+    setLoading(true);
+    setError(null);
+
+    if (mode === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      setLoading(false);
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      router.push(redirect);
+    }
+
+    if (mode === "signup") {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      setLoading(false);
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Supabase auto-login after signup
+      router.push(redirect);
+    }
+  };
+
   const signInWithGoogle = async () => {
-    const supabase = supabaseBrowser();
+    setLoading(true);
+    setError(null);
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -26,21 +79,89 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">
-            Welcome to ContentJet
+            {mode === "signin"
+              ? "Welcome back to ContentJet"
+              : "Create your ContentJet account"}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Sign in to continue to your dashboard
+            {mode === "signin"
+              ? "Sign in to continue to your dashboard"
+              : "Sign up to get started"}
           </p>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Email + Password */}
+          <div className="space-y-2">
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
+
+          <Button
+            onClick={handleEmailAuth}
+            className="w-full"
+            disabled={loading || !email || !password}
+          >
+            {loading
+              ? "Please wait..."
+              : mode === "signin"
+              ? "Sign in with Email"
+              : "Create account"}
+          </Button>
+
+          <div className="text-center text-sm">
+            {mode === "signin" ? (
+              <>
+                Don’t have an account?{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => setMode("signup")}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => setMode("signin")}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Google OAuth */}
           <Button
             onClick={signInWithGoogle}
+            variant="outline"
             className="w-full"
+            disabled={loading}
           >
             Continue with Google
           </Button>
-
 
           <p className="text-xs text-center text-muted-foreground">
             By continuing, you agree to our Terms & Privacy Policy

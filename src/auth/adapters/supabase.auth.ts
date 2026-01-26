@@ -7,6 +7,7 @@ export function createSupabaseAuth(): AuthContextValue {
   let status: "auth" | "guest" = "guest";
   let user: AuthUser | null = null;
 
+  // Initial session check
   supabase.auth.getSession().then(({ data }) => {
     const sessionUser = data.session?.user;
     if (sessionUser) {
@@ -20,6 +21,7 @@ export function createSupabaseAuth(): AuthContextValue {
     }
   });
 
+  // Listen to auth state changes
   supabase.auth.onAuthStateChange((_event, session) => {
     const sessionUser = session?.user;
     if (sessionUser) {
@@ -40,19 +42,44 @@ export function createSupabaseAuth(): AuthContextValue {
     get status() {
       return status;
     },
+
     get user() {
       return user;
     },
 
+    // ✅ Google OAuth (already DONE)
     async signIn() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
     },
-  });
-},
 
+    // ✅ Email + Password — SIGN IN
+    async signInWithEmail(email: string, password: string) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+    },
+
+    // ✅ Email + Password — SIGN UP
+    async signUpWithEmail(email: string, password: string) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+    },
 
     async signOut() {
       await supabase.auth.signOut();
