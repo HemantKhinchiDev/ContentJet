@@ -10,13 +10,19 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const supabase = supabaseBrowser();
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
         router.replace("/dashboard");
       } else {
         router.replace("/login");
       }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   return <p>Signing you in…</p>;

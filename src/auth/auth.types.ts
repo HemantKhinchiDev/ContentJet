@@ -1,4 +1,4 @@
-export type AuthStatus = "guest" | "auth";
+export type AuthStatus = "guest" | "auth" | "unverified";
 
 export interface AuthUser {
   id: string;
@@ -8,10 +8,12 @@ export interface AuthUser {
 }
 
 export type AuthContextValue = {
-  status: "auth" | "guest";
+  /** true = auth adapter has finished initial hydration */
+  ready: boolean;
+
+  status: AuthStatus;
   user: AuthUser | null;
+
   signIn(): Promise<void>;
   signOut(): Promise<void>;
 };
-
-

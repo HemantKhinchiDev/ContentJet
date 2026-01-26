@@ -1,31 +1,19 @@
-import { AuthContextValue, AuthUser } from "../auth.types";
+import { AuthContextValue, AuthUser, AuthStatus } from "../auth.types";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 export function createSupabaseAuth(): AuthContextValue {
   const supabase = supabaseBrowser();
 
-  let status: "auth" | "guest" = "guest";
+  let ready = false;
+  let status: AuthStatus = "guest";
   let user: AuthUser | null = null;
 
-  // Initial session check
+  // Initial session check (CRITICAL for OAuth)
   supabase.auth.getSession().then(({ data }) => {
     const sessionUser = data.session?.user;
-    if (sessionUser) {
-      status = "auth";
-      user = {
-        id: sessionUser.id,
-        email: sessionUser.email ?? "",
-        name: sessionUser.user_metadata?.full_name,
-        avatarUrl: sessionUser.user_metadata?.avatar_url,
-      };
-    }
-  });
 
-  // Listen to auth state changes
-  supabase.auth.onAuthStateChange((_event, session) => {
-    const sessionUser = session?.user;
     if (sessionUser) {
-      status = "auth";
+      status = sessionUser.email_confirmed_at ? "auth" : "unverified";
       user = {
         id: sessionUser.id,
         email: sessionUser.email ?? "",
@@ -36,9 +24,35 @@ export function createSupabaseAuth(): AuthContextValue {
       status = "guest";
       user = null;
     }
+
+    ready = true;
+  });
+
+  // Listen to auth state changes (login / logout / OAuth complete)
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const sessionUser = session?.user;
+
+    if (sessionUser) {
+      status = sessionUser.email_confirmed_at ? "auth" : "unverified";
+      user = {
+        id: sessionUser.id,
+        email: sessionUser.email ?? "",
+        name: sessionUser.user_metadata?.full_name,
+        avatarUrl: sessionUser.user_metadata?.avatar_url,
+      };
+    } else {
+      status = "guest";
+      user = null;
+    }
+
+    ready = true;
   });
 
   return {
+    get ready() {
+      return ready;
+    },
+
     get status() {
       return status;
     },
@@ -47,7 +61,7 @@ export function createSupabaseAuth(): AuthContextValue {
       return user;
     },
 
-    // ✅ Google OAuth (already DONE)
+    // Google OAuth
     async signIn() {
       await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -55,30 +69,6 @@ export function createSupabaseAuth(): AuthContextValue {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-    },
-
-    // ✅ Email + Password — SIGN IN
-    async signInWithEmail(email: string, password: string) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-    },
-
-    // ✅ Email + Password — SIGN UP
-    async signUpWithEmail(email: string, password: string) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
     },
 
     async signOut() {

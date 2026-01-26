@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthContextValue } from "./auth.types";
 import { createAuthAdapter } from "./index";
 
@@ -16,10 +11,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    // force re-render when auth state mutates internally
+    // Adapter is the authority.
+    // We just re-render when its internal state mutates.
     const interval = setInterval(() => {
       forceUpdate((v) => v + 1);
-    }, 500);
+    }, 300);
 
     return () => clearInterval(interval);
   }, []);

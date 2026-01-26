@@ -1,21 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/dashboard/header";
+import { useAuth } from "@/auth/auth.context";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [ready, setReady] = useState(false);
+  const { status } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    // DEV MODE: bypass auth completely
-    setReady(true);
-  }, []);
+    if (status === "guest") {
+      router.replace("/login");
+    }
 
-  if (!ready) {
+    if (status === "unverified") {
+      router.replace("/login?reason=verify-email");
+    }
+  }, [status, router]);
+
+  if (status !== "auth") {
     return null;
   }
 

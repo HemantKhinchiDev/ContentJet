@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { isDisposableEmail } from "@/lib/isDisposableEmail";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,9 @@ type Mode = "signin" | "signup";
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
+
   const redirect = params.get("redirect") || "/dashboard";
+  const reason = params.get("reason");
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -45,6 +48,12 @@ export default function LoginPage() {
     }
 
     if (mode === "signup") {
+      if (isDisposableEmail(email)) {
+        setLoading(false);
+        setError("Disposable email addresses are not allowed.");
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -57,8 +66,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Supabase auto-login after signup
-      router.push(redirect);
+      setError("Please verify your email to continue.");
     }
   };
 
@@ -91,7 +99,18 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Email + Password */}
+          {reason === "verify-email" && (
+            <p className="text-sm text-amber-600 text-center">
+              Please verify your email to continue.
+            </p>
+          )}
+
+          {reason === "reset-expired" && (
+            <p className="text-sm text-red-500 text-center">
+              Your password reset link has expired. Please request a new one.
+            </p>
+          )}
+
           <div className="space-y-2">
             <Input
               type="email"
@@ -125,6 +144,18 @@ export default function LoginPage() {
               : "Create account"}
           </Button>
 
+          {mode === "signin" && (
+            <div className="text-center text-sm">
+              <button
+                type="button"
+                className="underline text-muted-foreground"
+                onClick={() => router.push("/reset-password")}
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
+
           <div className="text-center text-sm">
             {mode === "signin" ? (
               <>
@@ -153,7 +184,6 @@ export default function LoginPage() {
 
           <Separator />
 
-          {/* Google OAuth */}
           <Button
             onClick={signInWithGoogle}
             variant="outline"
