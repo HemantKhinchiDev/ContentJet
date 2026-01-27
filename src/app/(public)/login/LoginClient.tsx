@@ -47,6 +47,25 @@ const GitHubIcon = () => (
   </svg>
 );
 
+// ContentJet Logo Component
+const ContentJetLogo = () => (
+  <div className="flex flex-col items-center gap-3">
+    {/* Logo mark with subtle glow */}
+    <div className="relative">
+      <div className="absolute inset-0 blur-xl opacity-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl scale-150" />
+      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
+        <span className="text-lg font-bold bg-gradient-to-br from-zinc-700 to-zinc-900 dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
+          CJ
+        </span>
+      </div>
+    </div>
+    {/* Brand name */}
+    <span className="text-lg font-semibold text-foreground tracking-tight">
+      ContentJet
+    </span>
+  </div>
+);
+
 export default function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
@@ -133,14 +152,14 @@ export default function LoginClient() {
   const isFormDisabled = loading || oauthLoading !== null;
 
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-sm">
+    <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
       <CardHeader className="space-y-2 text-center pb-8">
-        {/* Logo placeholder */}
-        <div className="mx-auto mb-4 h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-lg font-bold text-primary-foreground">C</span>
+        {/* ContentJet Logo */}
+        <div className="mb-4">
+          <ContentJetLogo />
         </div>
 
-        <CardTitle className="text-3xl font-semibold">
+        <CardTitle className="text-2xl font-semibold">
           {mode === "signin" ? "Welcome back" : "Create your account"}
         </CardTitle>
 
@@ -154,13 +173,13 @@ export default function LoginClient() {
       <CardContent className="space-y-6">
         {/* Status messages */}
         {reason === "verify-email" && (
-          <p className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+          <p className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-900/50">
             Please verify your email to continue.
           </p>
         )}
 
         {reason === "reset-expired" && (
-          <p className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-md">
+          <p className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-md border border-destructive/20">
             Your password reset link has expired. Please request a new one.
           </p>
         )}

@@ -45,6 +45,25 @@ const GitHubIcon = () => (
   </svg>
 );
 
+// ContentJet Logo Component
+const ContentJetLogo = () => (
+  <div className="flex flex-col items-center gap-3">
+    {/* Logo mark with subtle glow */}
+    <div className="relative">
+      <div className="absolute inset-0 blur-xl opacity-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl scale-150" />
+      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
+        <span className="text-lg font-bold bg-gradient-to-br from-zinc-700 to-zinc-900 dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
+          CJ
+        </span>
+      </div>
+    </div>
+    {/* Brand name */}
+    <span className="text-lg font-semibold text-foreground tracking-tight">
+      ContentJet
+    </span>
+  </div>
+);
+
 export default function SignupClient() {
   const router = useRouter();
 
@@ -112,27 +131,30 @@ export default function SignupClient() {
   // Success state - email verification required
   if (success) {
     return (
-      <Card className="border-0 shadow-none sm:border sm:shadow-sm">
+      <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
         <CardHeader className="space-y-2 text-center pb-8">
-          {/* Success icon */}
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-            <svg
-              className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+          {/* Success icon with glow */}
+          <div className="mx-auto mb-4 relative">
+            <div className="absolute inset-0 blur-xl opacity-30 bg-emerald-500 rounded-full scale-150" />
+            <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+              <svg
+                className="h-8 w-8 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
           </div>
 
-          <CardTitle className="text-3xl font-semibold">
+          <CardTitle className="text-2xl font-semibold">
             Check your email
           </CardTitle>
 
@@ -143,10 +165,12 @@ export default function SignupClient() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground text-center">
-            Click the link in your email to verify your account. If you
-            don&apos;t see it, check your spam folder.
-          </p>
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
+            <p className="text-sm text-muted-foreground text-center">
+              Click the link in your email to verify your account. If you
+              don&apos;t see it, check your spam folder.
+            </p>
+          </div>
 
           <Button
             variant="secondary"
@@ -161,14 +185,14 @@ export default function SignupClient() {
   }
 
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-sm">
+    <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
       <CardHeader className="space-y-2 text-center pb-8">
-        {/* Logo placeholder */}
-        <div className="mx-auto mb-4 h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-lg font-bold text-primary-foreground">C</span>
+        {/* ContentJet Logo */}
+        <div className="mb-4">
+          <ContentJetLogo />
         </div>
 
-        <CardTitle className="text-3xl font-semibold">
+        <CardTitle className="text-2xl font-semibold">
           Create your account
         </CardTitle>
 
