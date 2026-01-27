@@ -34,18 +34,16 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 🚫 Not logged in → redirect to login
   if (!user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
   }
 
-  // ✅ Logged in → allow dashboard
   return res;
 }
 
 export const config = {
   matcher: ["/dashboard/:path*"],
-  runtime: "nodejs",
+  // Removed runtime: "nodejs" - not needed
 };
