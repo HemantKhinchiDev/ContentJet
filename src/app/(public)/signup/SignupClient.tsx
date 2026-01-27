@@ -45,25 +45,6 @@ const GitHubIcon = () => (
   </svg>
 );
 
-// ContentJet Logo Component
-const ContentJetLogo = () => (
-  <div className="flex flex-col items-center gap-3">
-    {/* Logo mark with subtle glow */}
-    <div className="relative">
-      <div className="absolute inset-0 blur-xl opacity-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl scale-150" />
-      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
-        <span className="text-lg font-bold bg-gradient-to-br from-zinc-700 to-zinc-900 dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
-          CJ
-        </span>
-      </div>
-    </div>
-    {/* Brand name */}
-    <span className="text-lg font-semibold text-foreground tracking-tight">
-      ContentJet
-    </span>
-  </div>
-);
-
 export default function SignupClient() {
   const router = useRouter();
 
@@ -80,7 +61,6 @@ export default function SignupClient() {
     setLoading(true);
     setError(null);
 
-    // Check for disposable email
     if (isDisposableEmail(email)) {
       setLoading(false);
       setError("Disposable email addresses are not allowed.");
@@ -128,15 +108,14 @@ export default function SignupClient() {
 
   const isFormDisabled = loading || oauthLoading !== null;
 
-  // Success state - email verification required
+  // Success state
   if (success) {
     return (
-      <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
-        <CardHeader className="space-y-2 text-center pb-8">
-          {/* Success icon with glow */}
-          <div className="mx-auto mb-4 relative">
-            <div className="absolute inset-0 blur-xl opacity-30 bg-emerald-500 rounded-full scale-150" />
-            <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+      <Card className="rounded-xl border shadow-xl shadow-black/5 dark:shadow-black/50 bg-card">
+        <CardHeader className="text-center pb-6 pt-12 px-8">
+          {/* Success icon */}
+          <div className="mx-auto mb-6 relative inline-block">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
               <svg
                 className="h-8 w-8 text-white"
                 fill="none"
@@ -154,22 +133,19 @@ export default function SignupClient() {
             </div>
           </div>
 
-          <CardTitle className="text-2xl font-semibold">
+          <CardTitle className="text-2xl font-semibold tracking-tight">
             Check your email
           </CardTitle>
 
-          <CardDescription className="text-base">
-            We&apos;ve sent a verification link to{" "}
+          <CardDescription className="text-sm">
+            We sent a verification link to{" "}
             <span className="font-medium text-foreground">{email}</span>
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          <div className="p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground text-center">
-              Click the link in your email to verify your account. If you
-              don&apos;t see it, check your spam folder.
-            </p>
+        <CardContent className="space-y-5 px-8 pb-8">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground text-center">
+            Click the link in your email to verify your account. Check your spam folder if you don&apos;t see it.
           </div>
 
           <Button
@@ -185,32 +161,43 @@ export default function SignupClient() {
   }
 
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
-      <CardHeader className="space-y-2 text-center pb-8">
-        {/* ContentJet Logo */}
-        <div className="mb-4">
-          <ContentJetLogo />
+    <Card className="rounded-xl border shadow-xl shadow-black/5 dark:shadow-black/50 bg-card">
+      <CardHeader className="text-center pb-6 pt-8 px-8">
+        {/* ContentJet branding */}
+        <div className="mx-auto mb-6 relative inline-block">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 border border-border flex items-center justify-center shadow-lg">
+            <span className="text-xl font-bold bg-gradient-to-br from-zinc-100 to-zinc-300 dark:from-zinc-900 dark:to-zinc-800 bg-clip-text text-transparent">
+              CJ
+            </span>
+          </div>
+          <div className="mt-3 text-base font-semibold text-foreground">
+            ContentJet
+          </div>
         </div>
 
-        <CardTitle className="text-2xl font-semibold">
+        <CardTitle className="text-2xl font-semibold tracking-tight">
           Create your account
         </CardTitle>
 
-        <CardDescription>
+        <CardDescription className="text-sm">
           Get started with your free account today
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* OAuth buttons - priority order: Google, GitHub */}
-        <div className="space-y-3">
+      <CardContent className="space-y-5 px-8 pb-8">
+        {/* OAuth buttons - 2 column grid */}
+        <div className="grid grid-cols-2 gap-3">
           <OAuthButton
             provider="Google"
             icon={<GoogleIcon />}
             onClick={signInWithGoogle}
             loading={oauthLoading === "google"}
             disabled={isFormDisabled}
-          />
+            fullWidth={false}
+            className="w-full"
+          >
+            Google
+          </OAuthButton>
 
           <OAuthButton
             provider="GitHub"
@@ -218,7 +205,11 @@ export default function SignupClient() {
             onClick={signInWithGitHub}
             loading={oauthLoading === "github"}
             disabled={isFormDisabled}
-          />
+            fullWidth={false}
+            className="w-full"
+          >
+            GitHub
+          </OAuthButton>
         </div>
 
         {/* Divider */}
@@ -232,12 +223,12 @@ export default function SignupClient() {
           }}
           className="space-y-4"
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Email field */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="email"
-                className="text-sm font-medium leading-none"
+                className="text-sm font-medium"
               >
                 Email
               </label>
@@ -254,10 +245,10 @@ export default function SignupClient() {
             </div>
 
             {/* Password field */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="password"
-                className="text-sm font-medium leading-none"
+                className="text-sm font-medium"
               >
                 Password
               </label>
@@ -279,9 +270,9 @@ export default function SignupClient() {
 
           {/* Error message */}
           {error && (
-            <p className="text-sm text-destructive text-center" role="alert">
+            <div className="text-sm text-destructive text-center" role="alert">
               {error}
-            </p>
+            </div>
           )}
 
           {/* Submit button */}
@@ -296,28 +287,28 @@ export default function SignupClient() {
         </form>
 
         {/* Toggle to login */}
-        <p className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground pt-2">
           Already have an account?{" "}
           <button
             type="button"
-            className="font-medium text-foreground hover:underline transition-colors"
+            className="font-medium text-foreground hover:underline"
             onClick={() => router.push("/login")}
           >
             Sign in
           </button>
-        </p>
+        </div>
 
         {/* Terms */}
-        <p className="text-xs text-center text-muted-foreground">
+        <div className="text-xs text-center text-muted-foreground pt-1">
           By creating an account, you agree to our{" "}
           <a href="/terms" className="underline hover:text-foreground">
-            Terms of Service
+            Terms
           </a>{" "}
           and{" "}
           <a href="/privacy" className="underline hover:text-foreground">
             Privacy Policy
           </a>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );

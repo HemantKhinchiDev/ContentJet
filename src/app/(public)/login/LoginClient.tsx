@@ -47,25 +47,6 @@ const GitHubIcon = () => (
   </svg>
 );
 
-// ContentJet Logo Component
-const ContentJetLogo = () => (
-  <div className="flex flex-col items-center gap-3">
-    {/* Logo mark with subtle glow */}
-    <div className="relative">
-      <div className="absolute inset-0 blur-xl opacity-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl scale-150" />
-      <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
-        <span className="text-lg font-bold bg-gradient-to-br from-zinc-700 to-zinc-900 dark:from-white dark:to-zinc-300 bg-clip-text text-transparent">
-          CJ
-        </span>
-      </div>
-    </div>
-    {/* Brand name */}
-    <span className="text-lg font-semibold text-foreground tracking-tight">
-      ContentJet
-    </span>
-  </div>
-);
-
 export default function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
@@ -152,47 +133,58 @@ export default function LoginClient() {
   const isFormDisabled = loading || oauthLoading !== null;
 
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-lg sm:shadow-black/5 dark:sm:shadow-black/20 bg-background/80 backdrop-blur-sm">
-      <CardHeader className="space-y-2 text-center pb-8">
-        {/* ContentJet Logo */}
-        <div className="mb-4">
-          <ContentJetLogo />
+    <Card className="rounded-xl border shadow-xl shadow-black/5 dark:shadow-black/50 bg-card">
+      <CardHeader className="text-center pb-6 pt-8 px-8">
+        {/* ContentJet branding */}
+        <div className="mx-auto mb-6 relative inline-block">
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 border border-border flex items-center justify-center shadow-lg">
+            <span className="text-xl font-bold bg-gradient-to-br from-zinc-100 to-zinc-300 dark:from-zinc-900 dark:to-zinc-800 bg-clip-text text-transparent">
+              CJ
+            </span>
+          </div>
+          <div className="mt-3 text-base font-semibold text-foreground">
+            ContentJet
+          </div>
         </div>
 
-        <CardTitle className="text-2xl font-semibold">
+        <CardTitle className="text-2xl font-semibold tracking-tight">
           {mode === "signin" ? "Welcome back" : "Create your account"}
         </CardTitle>
 
-        <CardDescription>
+        <CardDescription className="text-sm">
           {mode === "signin"
-            ? "Enter your credentials to access your account"
+            ? "Sign in to access your dashboard"
             : "Get started with your free account"}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-5 px-8 pb-8">
         {/* Status messages */}
         {reason === "verify-email" && (
-          <p className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-900/50">
+          <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
             Please verify your email to continue.
-          </p>
+          </div>
         )}
 
         {reason === "reset-expired" && (
-          <p className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-md border border-destructive/20">
-            Your password reset link has expired. Please request a new one.
-          </p>
+          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+            Your password reset link has expired.
+          </div>
         )}
 
-        {/* OAuth buttons - priority order: Google, GitHub */}
-        <div className="space-y-3">
+        {/* OAuth buttons - 2 column grid */}
+        <div className="grid grid-cols-2 gap-3">
           <OAuthButton
             provider="Google"
             icon={<GoogleIcon />}
             onClick={signInWithGoogle}
             loading={oauthLoading === "google"}
             disabled={isFormDisabled}
-          />
+            fullWidth={false}
+            className="w-full"
+          >
+            Google
+          </OAuthButton>
 
           <OAuthButton
             provider="GitHub"
@@ -200,7 +192,11 @@ export default function LoginClient() {
             onClick={signInWithGitHub}
             loading={oauthLoading === "github"}
             disabled={isFormDisabled}
-          />
+            fullWidth={false}
+            className="w-full"
+          >
+            GitHub
+          </OAuthButton>
         </div>
 
         {/* Divider */}
@@ -214,12 +210,12 @@ export default function LoginClient() {
           }}
           className="space-y-4"
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Email field */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="email"
-                className="text-sm font-medium leading-none"
+                className="text-sm font-medium"
               >
                 Email
               </label>
@@ -236,10 +232,10 @@ export default function LoginClient() {
             </div>
 
             {/* Password field */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="password"
-                className="text-sm font-medium leading-none"
+                className="text-sm font-medium"
               >
                 Password
               </label>
@@ -256,12 +252,12 @@ export default function LoginClient() {
             </div>
           </div>
 
-          {/* Forgot password link - right aligned */}
+          {/* Forgot password - right aligned */}
           {mode === "signin" && (
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => router.push("/reset-password")}
               >
                 Forgot password?
@@ -271,9 +267,9 @@ export default function LoginClient() {
 
           {/* Error message */}
           {error && (
-            <p className="text-sm text-destructive text-center" role="alert">
+            <div className="text-sm text-destructive text-center" role="alert">
               {error}
-            </p>
+            </div>
           )}
 
           {/* Submit button */}
@@ -288,13 +284,13 @@ export default function LoginClient() {
         </form>
 
         {/* Toggle mode */}
-        <p className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground pt-2">
           {mode === "signin" ? (
             <>
               Don&apos;t have an account?{" "}
               <button
                 type="button"
-                className="font-medium text-foreground hover:underline transition-colors"
+                className="font-medium text-foreground hover:underline"
                 onClick={() => setMode("signup")}
               >
                 Sign up
@@ -305,26 +301,26 @@ export default function LoginClient() {
               Already have an account?{" "}
               <button
                 type="button"
-                className="font-medium text-foreground hover:underline transition-colors"
+                className="font-medium text-foreground hover:underline"
                 onClick={() => setMode("signin")}
               >
                 Sign in
               </button>
             </>
           )}
-        </p>
+        </div>
 
         {/* Terms */}
-        <p className="text-xs text-center text-muted-foreground">
+        <div className="text-xs text-center text-muted-foreground pt-1">
           By continuing, you agree to our{" "}
           <a href="/terms" className="underline hover:text-foreground">
-            Terms of Service
+            Terms
           </a>{" "}
           and{" "}
           <a href="/privacy" className="underline hover:text-foreground">
             Privacy Policy
           </a>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );
