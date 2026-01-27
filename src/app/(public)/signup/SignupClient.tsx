@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
 
@@ -16,8 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OAuthButton } from "@/components/auth/OAuthButton";
 import { AuthDivider } from "@/components/auth/AuthDivider";
-
-type Mode = "signin" | "signup";
 
 // OAuth Provider Icons
 const GoogleIcon = () => (
@@ -47,63 +45,42 @@ const GitHubIcon = () => (
   </svg>
 );
 
-export default function LoginClient() {
+export default function SignupClient() {
   const router = useRouter();
-  const params = useSearchParams();
 
-  const redirect = params.get("redirect") || "/dashboard";
-  const reason = params.get("reason");
-
-  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const supabase = supabaseBrowser();
 
-  const handleEmailAuth = async () => {
+  const handleSignup = async () => {
     setLoading(true);
     setError(null);
 
-    if (mode === "signin") {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+    // Check for disposable email
+    if (isDisposableEmail(email)) {
       setLoading(false);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      router.push(redirect);
+      setError("Disposable email addresses are not allowed.");
+      return;
     }
 
-    if (mode === "signup") {
-      if (isDisposableEmail(email)) {
-        setLoading(false);
-        setError("Disposable email addresses are not allowed.");
-        return;
-      }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+    setLoading(false);
 
-      setLoading(false);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      setError("Please verify your email to continue.");
+    if (error) {
+      setError(error.message);
+      return;
     }
+
+    setSuccess(true);
   };
 
   const signInWithGoogle = async () => {
@@ -132,6 +109,57 @@ export default function LoginClient() {
 
   const isFormDisabled = loading || oauthLoading !== null;
 
+  // Success state - email verification required
+  if (success) {
+    return (
+      <Card className="border-0 shadow-none sm:border sm:shadow-sm">
+        <CardHeader className="space-y-2 text-center pb-8">
+          {/* Success icon */}
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <svg
+              className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+
+          <CardTitle className="text-3xl font-semibold">
+            Check your email
+          </CardTitle>
+
+          <CardDescription className="text-base">
+            We&apos;ve sent a verification link to{" "}
+            <span className="font-medium text-foreground">{email}</span>
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <p className="text-sm text-muted-foreground text-center">
+            Click the link in your email to verify your account. If you
+            don&apos;t see it, check your spam folder.
+          </p>
+
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => router.push("/login")}
+          >
+            Back to sign in
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-0 shadow-none sm:border sm:shadow-sm">
       <CardHeader className="space-y-2 text-center pb-8">
@@ -141,30 +169,15 @@ export default function LoginClient() {
         </div>
 
         <CardTitle className="text-3xl font-semibold">
-          {mode === "signin" ? "Welcome back" : "Create your account"}
+          Create your account
         </CardTitle>
 
         <CardDescription>
-          {mode === "signin"
-            ? "Enter your credentials to access your account"
-            : "Get started with your free account"}
+          Get started with your free account today
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Status messages */}
-        {reason === "verify-email" && (
-          <p className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
-            Please verify your email to continue.
-          </p>
-        )}
-
-        {reason === "reset-expired" && (
-          <p className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-md">
-            Your password reset link has expired. Please request a new one.
-          </p>
-        )}
-
         {/* OAuth buttons - priority order: Google, GitHub */}
         <div className="space-y-3">
           <OAuthButton
@@ -191,7 +204,7 @@ export default function LoginClient() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleEmailAuth();
+            handleSignup();
           }}
           className="space-y-4"
         >
@@ -227,28 +240,18 @@ export default function LoginClient() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isFormDisabled}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                autoComplete="new-password"
                 error={!!error}
               />
+              <p className="text-xs text-muted-foreground">
+                Must be at least 8 characters
+              </p>
             </div>
           </div>
-
-          {/* Forgot password link - right aligned */}
-          {mode === "signin" && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => router.push("/reset-password")}
-              >
-                Forgot password?
-              </button>
-            </div>
-          )}
 
           {/* Error message */}
           {error && (
@@ -264,40 +267,25 @@ export default function LoginClient() {
             loading={loading}
             disabled={isFormDisabled || !email || !password}
           >
-            {mode === "signin" ? "Sign in" : "Create account"}
+            Create account
           </Button>
         </form>
 
-        {/* Toggle mode */}
+        {/* Toggle to login */}
         <p className="text-center text-sm text-muted-foreground">
-          {mode === "signin" ? (
-            <>
-              Don&apos;t have an account?{" "}
-              <button
-                type="button"
-                className="font-medium text-foreground hover:underline transition-colors"
-                onClick={() => setMode("signup")}
-              >
-                Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button
-                type="button"
-                className="font-medium text-foreground hover:underline transition-colors"
-                onClick={() => setMode("signin")}
-              >
-                Sign in
-              </button>
-            </>
-          )}
+          Already have an account?{" "}
+          <button
+            type="button"
+            className="font-medium text-foreground hover:underline transition-colors"
+            onClick={() => router.push("/login")}
+          >
+            Sign in
+          </button>
         </p>
 
         {/* Terms */}
         <p className="text-xs text-center text-muted-foreground">
-          By continuing, you agree to our{" "}
+          By creating an account, you agree to our{" "}
           <a href="/terms" className="underline hover:text-foreground">
             Terms of Service
           </a>{" "}

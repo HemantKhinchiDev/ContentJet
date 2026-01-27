@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import LoginClient from "./LoginClient";
+import SignupClient from "./SignupClient";
 
 export const metadata: Metadata = {
-  title: "Sign In | ContentJet",
-  description: "Sign in to your ContentJet account or create a new one.",
+  title: "Sign Up | ContentJet",
+  description: "Create your free ContentJet account and get started today.",
 };
 
-function LoginLoading() {
+function SignupLoading() {
   return (
     <div className="w-full space-y-6 animate-pulse">
       {/* Logo placeholder */}
@@ -17,8 +17,8 @@ function LoginLoading() {
 
       {/* Title placeholder */}
       <div className="space-y-2 flex flex-col items-center">
-        <div className="h-8 w-48 rounded bg-muted" />
-        <div className="h-4 w-64 rounded bg-muted" />
+        <div className="h-8 w-52 rounded bg-muted" />
+        <div className="h-4 w-60 rounded bg-muted" />
       </div>
 
       {/* OAuth buttons placeholder */}
@@ -44,10 +44,10 @@ function LoginLoading() {
   );
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
-    <Suspense fallback={<LoginLoading />}>
-      <LoginClient />
+    <Suspense fallback={<SignupLoading />}>
+      <SignupClient />
     </Suspense>
   );
 }
