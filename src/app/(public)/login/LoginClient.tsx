@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
 
@@ -159,197 +160,195 @@ export default function LoginClient() {
   const isFormDisabled = loading || oauthLoading !== null;
 
   return (
-    <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-zinc-950">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 text-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 mb-3">
-              <span className="text-lg font-bold text-white dark:text-zinc-900">CJ</span>
-            </div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {mode === "signin" ? "Welcome back" : "Create your account"}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {mode === "signin"
-                ? "Sign in to access your dashboard"
-                : "Get started with your free account"}
-            </p>
-          </div>
+    <div className="w-full">
+      {/* Logo and heading */}
+      <div className="mb-8 text-center">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 mb-3">
+          <span className="text-lg font-bold text-white dark:text-zinc-900">CJ</span>
+        </div>
+        <h1 className="text-2xl font-semibold text-foreground">
+          {mode === "signin" ? "Welcome back" : "Create your account"}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          {mode === "signin"
+            ? "Sign in to access your dashboard"
+            : "Get started with your free account"}
+        </p>
+      </div>
 
-          {reason === "verify-email" && (
-            <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50 mb-5">
-              Please verify your email to continue.
-            </div>
-          )}
+      {/* Status messages */}
+      {reason === "verify-email" && (
+        <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50 mb-5">
+          Please verify your email to continue.
+        </div>
+      )}
 
-          {reason === "reset-expired" && (
-            <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
-              Your password reset link has expired.
-            </div>
-          )}
+      {reason === "reset-expired" && (
+        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
+          Your password reset link has expired.
+        </div>
+      )}
 
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <OAuthButton
-              provider="Google"
-              icon={<GoogleIcon />}
-              onClick={signInWithGoogle}
-              loading={oauthLoading === "google"}
-              disabled={isFormDisabled}
-              fullWidth={false}
-              className="w-full"
-            >
-              Google
-            </OAuthButton>
+      {reason === "verification-failed" && (
+        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
+          Email verification failed. Please try again.
+        </div>
+      )}
 
-            <OAuthButton
-              provider="GitHub"
-              icon={<GitHubIcon />}
-              onClick={signInWithGitHub}
-              loading={oauthLoading === "github"}
-              disabled={isFormDisabled}
-              fullWidth={false}
-              className="w-full"
-            >
-              GitHub
-            </OAuthButton>
-          </div>
+      {reason === "oauth-error" && (
+        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
+          Authentication failed. Please try again.
+        </div>
+      )}
 
-          <AuthDivider text="Or continue with email" />
+      {reason === "invalid-callback" && (
+        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
+          Invalid authentication callback. Please try again.
+        </div>
+      )}
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleEmailAuth();
+      {/* OAuth buttons */}
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <OAuthButton
+          provider="Google"
+          icon={<GoogleIcon />}
+          onClick={signInWithGoogle}
+          loading={oauthLoading === "google"}
+          disabled={isFormDisabled}
+          fullWidth={false}
+          className="w-full"
+        >
+          Google
+        </OAuthButton>
+
+        <OAuthButton
+          provider="GitHub"
+          icon={<GitHubIcon />}
+          onClick={signInWithGitHub}
+          loading={oauthLoading === "github"}
+          disabled={isFormDisabled}
+          fullWidth={false}
+          className="w-full"
+        >
+          GitHub
+        </OAuthButton>
+      </div>
+
+      {/* Divider */}
+      <AuthDivider text="Or continue with email" />
+
+      {/* Form */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleEmailAuth();
+        }}
+        className="space-y-4 mt-5"
+      >
+        {/* Email field */}
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email
+          </label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearFieldError("email");
             }}
-            className="space-y-4 mt-5"
-          >
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearFieldError("email");
-                }}
-                disabled={isFormDisabled}
-                autoComplete="email"
-                error={!!fieldErrors.email}
-              />
-              {fieldErrors.email && (
-                <p className="text-sm text-destructive">{fieldErrors.email}</p>
-              )}
-            </div>
+            disabled={isFormDisabled}
+            autoComplete="email"
+            error={!!fieldErrors.email}
+          />
+          {fieldErrors.email && (
+            <p className="text-sm text-destructive">{fieldErrors.email}</p>
+          )}
+        </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearFieldError("password");
-                }}
-                disabled={isFormDisabled}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                error={!!fieldErrors.password}
-              />
-              {fieldErrors.password && (
-                <p className="text-sm text-destructive">{fieldErrors.password}</p>
-              )}
-            </div>
+        {/* Password field */}
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+            }}
+            disabled={isFormDisabled}
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            error={!!fieldErrors.password}
+          />
+          {fieldErrors.password && (
+            <p className="text-sm text-destructive">{fieldErrors.password}</p>
+          )}
+        </div>
 
-            {mode === "signin" && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => router.push("/reset-password")}
-                >
-                  Forgot password?
-                </button>
-              </div>
-            )}
-
-            {error && (
-              <div className="text-sm text-destructive text-center" role="alert">
-                {error}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              fullWidth
-              loading={loading}
-              disabled={isFormDisabled}
-            >
-              {mode === "signin" ? "Sign in" : "Create account"}
-            </Button>
-          </form>
-
-          <p className="text-xs text-center text-muted-foreground mt-6">
-            By continuing, you agree to our{" "}
-            <a href="/terms" className="text-foreground hover:underline transition-colors">
-              Terms
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="text-foreground hover:underline transition-colors">
-              Privacy Policy
-            </a>
-          </p>
-
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-            <a
-              href="/"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Back to Home
-            </a>
+        {/* Forgot password */}
+        {mode === "signin" && (
+          <div className="flex justify-end">
             <button
               type="button"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              onClick={() => router.push("/reset-password")}
             >
-              {mode === "signin" ? "Sign up" : "Sign in"}
+              Forgot password?
             </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-zinc-700/20 via-transparent to-transparent" />
-
-        <div className="relative max-w-md">
-          <h2 className="text-3xl font-semibold text-white leading-tight">
-            Create, schedule, and publish — all in one place
-          </h2>
-          <p className="text-zinc-400 mt-3 text-lg">
-            ContentJet streamlines your content workflow so you can focus on what matters.
-          </p>
-
-          <div className="mt-10 space-y-5">
-            <div className="flex items-start gap-3">
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
-              <p className="text-zinc-300 text-sm">AI-powered drafts tailored to your brand voice</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
-              <p className="text-zinc-300 text-sm">Multi-platform scheduling with one click</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
-              <p className="text-zinc-300 text-sm">Unified analytics to track performance</p>
-            </div>
+        {/* General error */}
+        {error && (
+          <div className="text-sm text-destructive text-center" role="alert">
+            {error}
           </div>
-        </div>
+        )}
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          fullWidth
+          loading={loading}
+          disabled={isFormDisabled}
+        >
+          {mode === "signin" ? "Sign in" : "Create account"}
+        </Button>
+      </form>
+
+      {/* Terms */}
+      <p className="text-xs text-center text-muted-foreground mt-6">
+        By continuing, you agree to our{" "}
+        <Link href="/terms" className="text-foreground hover:underline transition-colors">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="text-foreground hover:underline transition-colors">
+          Privacy Policy
+        </Link>
+      </p>
+
+      {/* Bottom nav row */}
+      <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Back to Home
+        </Link>
+        <button
+          type="button"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+        >
+          {mode === "signin" ? "Sign up" : "Sign in"}
+        </button>
       </div>
     </div>
   );
