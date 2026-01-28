@@ -5,13 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OAuthButton } from "@/components/auth/OAuthButton";
@@ -19,7 +12,6 @@ import { AuthDivider } from "@/components/auth/AuthDivider";
 
 type Mode = "signin" | "signup";
 
-// OAuth Provider Icons
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
     <path
@@ -60,12 +52,39 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   const supabase = supabaseBrowser();
 
+  const validateForm = (): boolean => {
+    const errors: { email?: string; password?: string } = {};
+
+    if (!email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email";
+    }
+
+    if (!password) {
+      errors.password = "Password is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (field: "email" | "password") => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const handleEmailAuth = async () => {
-    setLoading(true);
     setError(null);
+
+    if (!validateForm()) return;
+
+    setLoading(true);
 
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({
@@ -81,6 +100,7 @@ export default function LoginClient() {
       }
 
       router.push(redirect);
+      router.refresh();
     }
 
     if (mode === "signup") {
@@ -110,10 +130,13 @@ export default function LoginClient() {
     setOauthLoading("google");
     setError(null);
 
+    const redirectTo = new URL("/auth/callback", window.location.origin);
+    redirectTo.searchParams.set("next", redirect);
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectTo.toString(),
       },
     });
   };
@@ -122,10 +145,13 @@ export default function LoginClient() {
     setOauthLoading("github");
     setError(null);
 
+    const redirectTo = new URL("/auth/callback", window.location.origin);
+    redirectTo.searchParams.set("next", redirect);
+
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectTo.toString(),
       },
     });
   };
@@ -133,90 +159,72 @@ export default function LoginClient() {
   const isFormDisabled = loading || oauthLoading !== null;
 
   return (
-    <Card className="rounded-xl border shadow-xl shadow-black/5 dark:shadow-black/50 bg-card">
-      <CardHeader className="text-center pb-6 pt-8 px-8">
-        {/* ContentJet branding */}
-        <div className="mx-auto mb-6 relative inline-block">
-          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 border border-border flex items-center justify-center shadow-lg">
-            <span className="text-xl font-bold bg-gradient-to-br from-zinc-100 to-zinc-300 dark:from-zinc-900 dark:to-zinc-800 bg-clip-text text-transparent">
-              CJ
-            </span>
+    <div className="min-h-screen flex">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-zinc-950">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 text-center">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 mb-3">
+              <span className="text-lg font-bold text-white dark:text-zinc-900">CJ</span>
+            </div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              {mode === "signin" ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {mode === "signin"
+                ? "Sign in to access your dashboard"
+                : "Get started with your free account"}
+            </p>
           </div>
-          <div className="mt-3 text-base font-semibold text-foreground">
-            ContentJet
+
+          {reason === "verify-email" && (
+            <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50 mb-5">
+              Please verify your email to continue.
+            </div>
+          )}
+
+          {reason === "reset-expired" && (
+            <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
+              Your password reset link has expired.
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <OAuthButton
+              provider="Google"
+              icon={<GoogleIcon />}
+              onClick={signInWithGoogle}
+              loading={oauthLoading === "google"}
+              disabled={isFormDisabled}
+              fullWidth={false}
+              className="w-full"
+            >
+              Google
+            </OAuthButton>
+
+            <OAuthButton
+              provider="GitHub"
+              icon={<GitHubIcon />}
+              onClick={signInWithGitHub}
+              loading={oauthLoading === "github"}
+              disabled={isFormDisabled}
+              fullWidth={false}
+              className="w-full"
+            >
+              GitHub
+            </OAuthButton>
           </div>
-        </div>
 
-        <CardTitle className="text-2xl font-semibold tracking-tight">
-          {mode === "signin" ? "Welcome back" : "Create your account"}
-        </CardTitle>
+          <AuthDivider text="Or continue with email" />
 
-        <CardDescription className="text-sm">
-          {mode === "signin"
-            ? "Sign in to access your dashboard"
-            : "Get started with your free account"}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-5 px-8 pb-8">
-        {/* Status messages */}
-        {reason === "verify-email" && (
-          <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
-            Please verify your email to continue.
-          </div>
-        )}
-
-        {reason === "reset-expired" && (
-          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-            Your password reset link has expired.
-          </div>
-        )}
-
-        {/* OAuth buttons - 2 column grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <OAuthButton
-            provider="Google"
-            icon={<GoogleIcon />}
-            onClick={signInWithGoogle}
-            loading={oauthLoading === "google"}
-            disabled={isFormDisabled}
-            fullWidth={false}
-            className="w-full"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleEmailAuth();
+            }}
+            className="space-y-4 mt-5"
           >
-            Google
-          </OAuthButton>
-
-          <OAuthButton
-            provider="GitHub"
-            icon={<GitHubIcon />}
-            onClick={signInWithGitHub}
-            loading={oauthLoading === "github"}
-            disabled={isFormDisabled}
-            fullWidth={false}
-            className="w-full"
-          >
-            GitHub
-          </OAuthButton>
-        </div>
-
-        {/* Divider */}
-        <AuthDivider text="Or continue with email" />
-
-        {/* Email/Password form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleEmailAuth();
-          }}
-          className="space-y-4"
-        >
-          <div className="space-y-3">
-            {/* Email field */}
             <div className="space-y-1.5">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium"
-              >
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </label>
               <Input
@@ -224,19 +232,21 @@ export default function LoginClient() {
                 type="email"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearFieldError("email");
+                }}
                 disabled={isFormDisabled}
                 autoComplete="email"
-                error={!!error}
+                error={!!fieldErrors.email}
               />
+              {fieldErrors.email && (
+                <p className="text-sm text-destructive">{fieldErrors.email}</p>
+              )}
             </div>
 
-            {/* Password field */}
             <div className="space-y-1.5">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium"
-              >
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </label>
               <Input
@@ -244,84 +254,103 @@ export default function LoginClient() {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearFieldError("password");
+                }}
                 disabled={isFormDisabled}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                error={!!error}
+                error={!!fieldErrors.password}
               />
+              {fieldErrors.password && (
+                <p className="text-sm text-destructive">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            {mode === "signin" && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => router.push("/reset-password")}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <div className="text-sm text-destructive text-center" role="alert">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              fullWidth
+              loading={loading}
+              disabled={isFormDisabled}
+            >
+              {mode === "signin" ? "Sign in" : "Create account"}
+            </Button>
+          </form>
+
+          <p className="text-xs text-center text-muted-foreground mt-6">
+            By continuing, you agree to our{" "}
+            <a href="/terms" className="text-foreground hover:underline transition-colors">
+              Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" className="text-foreground hover:underline transition-colors">
+              Privacy Policy
+            </a>
+          </p>
+
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+            <a
+              href="/"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back to Home
+            </a>
+            <button
+              type="button"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            >
+              {mode === "signin" ? "Sign up" : "Sign in"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="hidden lg:flex flex-1 items-center justify-center p-12 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-zinc-700/20 via-transparent to-transparent" />
+
+        <div className="relative max-w-md">
+          <h2 className="text-3xl font-semibold text-white leading-tight">
+            Create, schedule, and publish — all in one place
+          </h2>
+          <p className="text-zinc-400 mt-3 text-lg">
+            ContentJet streamlines your content workflow so you can focus on what matters.
+          </p>
+
+          <div className="mt-10 space-y-5">
+            <div className="flex items-start gap-3">
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
+              <p className="text-zinc-300 text-sm">AI-powered drafts tailored to your brand voice</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
+              <p className="text-zinc-300 text-sm">Multi-platform scheduling with one click</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-500 flex-shrink-0" />
+              <p className="text-zinc-300 text-sm">Unified analytics to track performance</p>
             </div>
           </div>
-
-          {/* Forgot password - right aligned */}
-          {mode === "signin" && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => router.push("/reset-password")}
-              >
-                Forgot password?
-              </button>
-            </div>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div className="text-sm text-destructive text-center" role="alert">
-              {error}
-            </div>
-          )}
-
-          {/* Submit button */}
-          <Button
-            type="submit"
-            fullWidth
-            loading={loading}
-            disabled={isFormDisabled || !email || !password}
-          >
-            {mode === "signin" ? "Sign in" : "Create account"}
-          </Button>
-        </form>
-
-        {/* Toggle mode */}
-        <div className="text-center text-sm text-muted-foreground pt-2">
-          {mode === "signin" ? (
-            <>
-              Don&apos;t have an account?{" "}
-              <button
-                type="button"
-                className="font-medium text-foreground hover:underline"
-                onClick={() => setMode("signup")}
-              >
-                Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button
-                type="button"
-                className="font-medium text-foreground hover:underline"
-                onClick={() => setMode("signin")}
-              >
-                Sign in
-              </button>
-            </>
-          )}
         </div>
-
-        {/* Terms */}
-        <div className="text-xs text-center text-muted-foreground pt-1">
-          By continuing, you agree to our{" "}
-          <a href="/terms" className="underline hover:text-foreground">
-            Terms
-          </a>{" "}
-          and{" "}
-          <a href="/privacy" className="underline hover:text-foreground">
-            Privacy Policy
-          </a>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

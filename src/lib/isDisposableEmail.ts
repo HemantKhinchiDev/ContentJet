@@ -1,5 +1,13 @@
 // src/lib/isDisposableEmail.ts
 
+/**
+ * Disposable email blocking utility
+ *
+ * ⚠️ TEMPORARILY DISABLED
+ * Set ENABLED = true to re-enable blocking
+ */
+const ENABLED = false; // TODO: Set to true before production
+
 // Lightweight disposable domains list (can be extended later)
 const DISPOSABLE_DOMAINS = [
   "juhxs.com",
@@ -14,6 +22,8 @@ const DISPOSABLE_DOMAINS = [
 ];
 
 export function isDisposableEmail(email: string): boolean {
+  if (!ENABLED) return false;
+
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) return false;
 

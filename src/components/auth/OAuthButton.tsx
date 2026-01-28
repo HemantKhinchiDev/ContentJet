@@ -39,14 +39,16 @@ const OAuthButton = React.forwardRef<HTMLButtonElement, OAuthButtonProps>(
         fullWidth={fullWidth}
         disabled={disabled || loading}
         aria-label={`Continue with ${provider}`}
+        aria-busy={loading}
         className={cn(
-          // OAuth-specific hover enhancement
-          "hover:bg-muted/80",
+          "flex items-center justify-center gap-2",
+          "border border-border",
+          "hover:bg-muted/80 hover:border-muted-foreground/20",
           className
         )}
         {...props}
       >
-        {/* Provider icon */}
+        {/* Provider icon or loading spinner */}
         {loading ? (
           <svg
             className="h-5 w-5 animate-spin"
@@ -70,14 +72,16 @@ const OAuthButton = React.forwardRef<HTMLButtonElement, OAuthButtonProps>(
             />
           </svg>
         ) : (
-          <span className="h-5 w-5 flex items-center justify-center">
+          <span className="h-5 w-5 flex items-center justify-center" aria-hidden="true">
             {icon}
           </span>
         )}
 
         {/* Button text */}
         <span>
-          {loading ? "Connecting..." : children || `Continue with ${provider}`}
+          {loading
+            ? `${children || provider}...`
+            : children || `Continue with ${provider}`}
         </span>
       </Button>
     );
