@@ -1,3 +1,5 @@
+// src/app/(public)/login/LoginClient.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -5,11 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
+import { isDevelopment } from "@/lib/env";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OAuthButton } from "@/components/auth/OAuthButton";
 import { AuthDivider } from "@/components/auth/AuthDivider";
+import { DevLoginForm } from "@/components/auth/DevLoginForm";
 
 type Mode = "signin" | "signup";
 
@@ -41,6 +45,25 @@ const GitHubIcon = () => (
 );
 
 export default function LoginClient() {
+  // ─────────────────────────────────────────────────────────────────
+  // DEVELOPMENT MODE: Render DevLoginForm only
+  // ─────────────────────────────────────────────────────────────────
+  if (isDevelopment()) {
+    return <DevLoginForm />;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // PRODUCTION MODE: Original Supabase OAuth + Email/Password UI
+  // (Code below is UNCHANGED from original implementation)
+  // ─────────────────────────────────────────────────────────────────
+  return <ProductionLoginForm />;
+}
+
+/**
+ * Production login form - extracted for clarity.
+ * This is the EXACT original implementation, untouched.
+ */
+function ProductionLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
 
