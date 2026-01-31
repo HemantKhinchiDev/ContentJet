@@ -13,19 +13,28 @@ export default function AuthCallbackClient() {
     const handleCallback = async () => {
       const supabase = supabaseBrowser();
 
-      // Extract all relevant params
       const code = searchParams.get("code");
-      const tokenHash = searchParams.get("token_hash");
-      const type = searchParams.get("type");
       const next = searchParams.get("next") || "/dashboard";
 
       try {
-        // OAuth flow (Google / GitHub)
+        // 🔐 OAuth callback (Google / GitHub)
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
+
           if (error) {
             console.error("OAuth exchange error:", error.message);
             router.replace("/login?reason=oauth-error");
+            return;
+          }
+
+          // ✅ IMPORTANT: confirm session exists
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (!session) {
+            console.error("Session missing after OAuth exchange");
+            router.replace("/login?reason=session-missing");
             return;
           }
 
@@ -33,38 +42,10 @@ export default function AuthCallbackClient() {
           return;
         }
 
-        // Email verification flow (signup / recovery / invite)
-        if (tokenHash && type) {
-          setStatus("Verifying your email…");
-
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: type as "signup" | "recovery" | "invite" | "email",
-          });
-
-          if (error) {
-            console.error("Email verification error:", error.message);
-            router.replace("/login?reason=verification-failed");
-            return;
-          }
-
-          // Verification successful — session should now exist
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-
-          if (session) {
-            router.replace("/dashboard");
-          } else {
-            router.replace("/login?reason=session-missing");
-          }
-          return;
-        }
-
-        // No valid params — invalid callback
+        // ❌ Invalid callback
         router.replace("/login?reason=invalid-callback");
       } catch (err) {
-        console.error("Auth callback error:", err);
+        console.error("Auth callback unexpected error:", err);
         router.replace("/login?reason=unexpected-error");
       }
     };

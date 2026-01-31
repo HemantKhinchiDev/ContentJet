@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Plus, Send } from "lucide-react";
 import { ContentHistory } from "@/components/dashboard/content-history";
 import { DeleteToast } from "@/components/dashboard/delete-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type ContentStatus = "pending" | "success" | "failed";
 
@@ -50,6 +57,7 @@ export default function DashboardPage() {
   const [deletedItem, setDeletedItem] = useState<ContentItem | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [isLoading] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   const handleDelete = (id: string) => {
     const item = items.find((i) => i.id === id);
@@ -88,31 +96,131 @@ export default function DashboardPage() {
     }, 2000);
   };
 
+  const handleSubmit = () => {
+    if (!inputValue.trim()) return;
+
+    console.log("Generate content:", inputValue);
+
+    setInputValue("");
+
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.style.height = "auto";
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    setInputValue(target.value);
+
+    target.style.height = "auto";
+    target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Your Content
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Manage and view all your generated content
-        </p>
+    <TooltipProvider delayDuration={300}>
+      <div className="min-h-full py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <header className="space-y-1.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Your Content
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Manage and view all your generated content
+            </p>
+          </header>
+
+          <div className="relative">
+            <div className="flex items-end gap-2 rounded-3xl border border-border bg-background pl-4 pr-2 py-3 shadow-sm transition-all has-[:focus]:border-primary/50 has-[:focus]:ring-4 has-[:focus]:ring-primary/10">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex-shrink-0 self-end pb-1 text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer"
+                    aria-label="Add attachment"
+                  >
+                    <Plus className="h-5 w-5" strokeWidth={2} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  <p>Add attachment</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <textarea
+                value={inputValue}
+                onInput={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="What would you like to create today?"
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 min-h-[28px] border-0 outline-0 focus:border-0 focus:outline-0 focus:ring-0 focus-visible:border-0 focus-visible:outline-0 focus-visible:ring-0"
+                style={{
+                  maxHeight: "200px",
+                  border: "none",
+                  outline: "none",
+                  boxShadow: "none",
+                }}
+              />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!inputValue.trim()}
+                    className="flex-shrink-0 self-end mb-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background transition-all hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground/40 cursor-pointer disabled:cursor-not-allowed"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  <p>Send message</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            {["All", "Blog Post", "Email", "Social Media", "Landing Page"].map(
+              (type) => (
+                <button
+                  key={type}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors cursor-pointer ${
+                    type === "All"
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {type}
+                </button>
+              )
+            )}
+          </div>
+
+          <section className="space-y-4 pt-4">
+            <ContentHistory
+              items={items}
+              isLoading={isLoading}
+              onDelete={handleDelete}
+              onRetry={handleRetry}
+            />
+          </section>
+        </div>
+
+        <DeleteToast
+          isVisible={showToast}
+          onUndo={handleUndo}
+          onClose={() => setShowToast(false)}
+        />
       </div>
-
-      <div className="h-px bg-border" />
-
-      <ContentHistory
-        items={items}
-        isLoading={isLoading}
-        onDelete={handleDelete}
-        onRetry={handleRetry}
-      />
-
-      <DeleteToast
-        isVisible={showToast}
-        onUndo={handleUndo}
-        onClose={() => setShowToast(false)}
-      />
-    </div>
+    </TooltipProvider>
   );
 }

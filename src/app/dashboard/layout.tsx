@@ -51,7 +51,6 @@ const navItems = [
   },
 ];
 
-// Delay before sidebar expands on hover (ms)
 const SIDEBAR_EXPAND_DELAY = 400;
 
 export default function DashboardLayout({
@@ -63,24 +62,20 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Sidebar state
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sidebar is expanded if pinned OR hovered
   const isExpanded = isPinned || isHovered;
 
-  // Handle mouse enter with delay
   const handleMouseEnter = () => {
-    if (isPinned) return; // Already expanded, no need for delay
+    if (isPinned) return;
     
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
     }, SIDEBAR_EXPAND_DELAY);
   };
 
-  // Handle mouse leave - clear timeout and collapse
   const handleMouseLeave = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -89,7 +84,6 @@ export default function DashboardLayout({
     setIsHovered(false);
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -118,7 +112,6 @@ export default function DashboardLayout({
   return (
     <TooltipProvider delayDuration={0}>
       <div className="min-h-screen flex bg-background">
-        {/* Sidebar */}
         <aside
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -127,16 +120,12 @@ export default function DashboardLayout({
             isExpanded ? "w-52" : "w-14"
           )}
         >
-          {/* Logo + Pin Toggle */}
           <div className="h-14 flex items-center border-b border-border relative px-2.5">
-            {/* Logo Container */}
             <div className="flex items-center gap-2.5">
-              {/* CJ Logo - Compact size */}
               <div className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300">
                 <span className="text-sm font-bold text-white dark:text-zinc-900">CJ</span>
               </div>
 
-              {/* Brand Text - CSS hide/show */}
               <span
                 className={cn(
                   "font-semibold text-sm text-foreground tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
@@ -147,14 +136,13 @@ export default function DashboardLayout({
               </span>
             </div>
 
-            {/* Pin Toggle Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setIsPinned(!isPinned)}
                   aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
                   className={cn(
-                    "absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200",
+                    "absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 cursor-pointer",
                     isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
                   )}
                 >
@@ -171,7 +159,6 @@ export default function DashboardLayout({
             </Tooltip>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 px-2 py-3 space-y-0.5">
             {navItems.map((item) => {
               const isActive =
@@ -183,7 +170,7 @@ export default function DashboardLayout({
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors",
+                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
                     isActive
                       ? "bg-accent text-foreground font-medium"
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -191,7 +178,6 @@ export default function DashboardLayout({
                 >
                   <item.icon className="h-4 w-4 flex-shrink-0" />
 
-                  {/* Label - CSS hide/show */}
                   <span
                     className={cn(
                       "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
@@ -203,7 +189,6 @@ export default function DashboardLayout({
                 </Link>
               );
 
-              // Show tooltip only when collapsed
               if (!isExpanded) {
                 return (
                   <Tooltip key={item.href}>
@@ -219,15 +204,13 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          {/* Bottom Section: Help + User */}
           <div className="px-2 py-2 border-t border-border space-y-1">
-            {/* Help Link */}
             {!isExpanded ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/help"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
                   >
                     <HelpCircle className="h-4 w-4 flex-shrink-0" />
                     <span
@@ -247,7 +230,7 @@ export default function DashboardLayout({
             ) : (
               <Link
                 href="/help"
-                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
               >
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
                 <span
@@ -261,17 +244,14 @@ export default function DashboardLayout({
               </Link>
             )}
 
-            {/* User Section */}
             {!isExpanded ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md cursor-default">
-                    {/* Avatar */}
+                  <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
                     <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
                       {userInitial}
                     </div>
 
-                    {/* User Info - CSS hide/show */}
                     <div
                       className={cn(
                         "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
@@ -292,12 +272,10 @@ export default function DashboardLayout({
               </Tooltip>
             ) : (
               <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
-                {/* Avatar */}
                 <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
                   {userInitial}
                 </div>
 
-                {/* User Info - CSS hide/show */}
                 <div
                   className={cn(
                     "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
@@ -314,10 +292,9 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
           <Header />
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-auto bg-muted/10">{children}</main>
         </div>
       </div>
     </TooltipProvider>
