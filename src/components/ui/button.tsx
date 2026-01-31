@@ -4,46 +4,36 @@ import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   [
-    // Base styles
     "inline-flex items-center justify-center gap-2",
     "rounded-md text-sm font-medium",
     "transition-all duration-150",
-    // Focus styles (leverages globals.css focus-visible)
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    // Disabled styles
     "disabled:pointer-events-none disabled:opacity-50",
-    // Active micro-interaction
     "active:scale-[0.98]",
   ],
   {
     variants: {
       variant: {
-        // Primary: solid fill, main CTA
         primary: [
           "bg-primary text-primary-foreground",
           "hover:bg-primary/90",
         ],
-        // Secondary: outlined, for OAuth and secondary actions
         secondary: [
           "border border-border bg-background text-foreground",
           "hover:bg-muted",
         ],
-        // Outline: alias for secondary (shadcn compatibility)
         outline: [
           "border border-border bg-background text-foreground",
           "hover:bg-muted",
         ],
-        // Ghost: minimal, for tertiary actions
         ghost: [
           "text-foreground",
           "hover:bg-muted",
         ],
-        // Destructive: for dangerous actions
         destructive: [
           "bg-destructive text-white",
           "hover:bg-destructive/90",
         ],
-        // Link: text-only button
         link: [
           "text-primary underline-offset-4",
           "hover:underline",
@@ -71,12 +61,10 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  /** Shows loading spinner and disables button */
   loading?: boolean;
-  /** Icon element to render before children */
   leftIcon?: React.ReactNode;
-  /** Icon element to render after children */
   rightIcon?: React.ReactNode;
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -91,6 +79,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       disabled,
       children,
+      asChild,
       ...props
     },
     ref
@@ -105,7 +94,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading}
         {...props}
       >
-        {/* Loading spinner */}
         {loading ? (
           <svg
             className="h-4 w-4 animate-spin"
@@ -131,11 +119,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           leftIcon
         )}
-
-        {/* Button text */}
         {loading ? "Loading..." : children}
-
-        {/* Right icon (hidden when loading) */}
         {!loading && rightIcon}
       </button>
     );
