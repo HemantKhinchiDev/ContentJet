@@ -1,21 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  FolderKanban,
-  History,
-  CalendarDays,
-  LayoutTemplate,
-  Settings,
-  HelpCircle,
-  PanelLeftClose,
-  PanelLeft,
-} from "lucide-react";
-import Header from "@/components/dashboard/header";
-import { useAuth } from "@/auth/auth.context";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Plus, Send } from "lucide-react";
+import { ContentHistory } from "@/components/dashboard/content-history";
+import { DeleteToast } from "@/components/dashboard/delete-toast";
 import {
   Tooltip,
   TooltipContent,
@@ -23,182 +11,170 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navItems = [
-  { label: "Project", href: "/dashboard", icon: FolderKanban },
-  { label: "History", href: "/dashboard/history", icon: History },
-  { label: "Today", href: "/dashboard/today", icon: CalendarDays },
-  { label: "Template", href: "/dashboard/template", icon: LayoutTemplate },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+// ✅ Types moved OUT of page.tsx (important for production build)
+import { ContentItem } from "@/types/content";
+
+const mockContentItems: ContentItem[] = [
+  {
+    id: "1",
+    title: "10 AI Marketing Strategies for 2024",
+    type: "Blog Post",
+    createdAt: new Date(Date.now() - 1000 * 60 * 45),
+    status: "success",
+  },
+  {
+    id: "2",
+    title: "Product Launch Email Campaign",
+    type: "Email",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    status: "pending",
+  },
+  {
+    id: "3",
+    title: "Instagram Post: Spring Collection",
+    type: "Social Media",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    status: "success",
+  },
+  {
+    id: "4",
+    title: "SEO Landing Page Copy",
+    type: "Landing Page",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    status: "failed",
+  },
 ];
 
-const SIDEBAR_EXPAND_DELAY = 400;
+export default function DashboardPage() {
+  const [items, setItems] = useState<ContentItem[]>(mockContentItems);
+  const [deletedItem, setDeletedItem] = useState<ContentItem | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [isLoading] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user } = useAuth(); // ✅ UI-only usage
-  const pathname = usePathname();
+  const handleDelete = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
 
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    setDeletedItem(item);
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setShowToast(true);
+  };
 
-  const isExpanded = isPinned || isHovered;
+  const handleUndo = () => {
+    if (!deletedItem) return;
 
-  const handleMouseEnter = () => {
-    if (isPinned) return;
-    hoverTimeoutRef.current = setTimeout(
-      () => setIsHovered(true),
-      SIDEBAR_EXPAND_DELAY
+    setItems((prev) =>
+      [...prev, deletedItem].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      )
     );
+    setDeletedItem(null);
+    setShowToast(false);
   };
 
-  const handleMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
+  const handleSubmit = () => {
+    if (!inputValue.trim()) return;
+
+    console.log("Generate content:", inputValue);
+
+    setInputValue("");
+
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.style.height = "auto";
     }
-    setIsHovered(false);
   };
 
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
 
-  const userEmail = user?.email ?? "";
-  const userInitial = userEmail.charAt(0).toUpperCase() || "?";
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    setInputValue(target.value);
+
+    target.style.height = "auto";
+    target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+  };
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="min-h-screen flex bg-background">
-        {/* Sidebar */}
-        <aside
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          className={cn(
-            "border-r border-border bg-muted/20 flex flex-col transition-all duration-300",
-            isExpanded ? "w-52" : "w-14"
-          )}
-        >
-          {/* Logo */}
-          <div className="h-14 flex items-center border-b border-border relative px-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 flex items-center justify-center">
-                <span className="text-sm font-bold text-white dark:text-zinc-900">
-                  CJ
-                </span>
-              </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="min-h-full py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <header className="space-y-1.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Your Content
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Manage and view all your generated content
+            </p>
+          </header>
 
-              <span
-                className={cn(
-                  "font-semibold text-sm transition-all overflow-hidden",
-                  isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-                )}
-              >
-                ContentJet
-              </span>
-            </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setIsPinned(!isPinned)}
-                  className={cn(
-                    "absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center",
-                    isExpanded
-                      ? "opacity-100"
-                      : "opacity-0 pointer-events-none"
-                  )}
-                >
-                  {isPinned ? (
-                    <PanelLeftClose className="h-3.5 w-3.5" />
-                  ) : (
-                    <PanelLeft className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {isPinned ? "Unpin sidebar" : "Pin sidebar"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-3 space-y-0.5">
-            {navItems.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-
-              const link = (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors",
-                    isActive
-                      ? "bg-accent font-medium"
-                      : "text-muted-foreground hover:bg-accent/50"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span
-                    className={cn(
-                      "transition-all overflow-hidden",
-                      isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-                    )}
+          {/* Input composer */}
+          <div className="relative">
+            <div className="flex items-end gap-2 rounded-3xl border border-border bg-background pl-4 pr-2 py-3 shadow-sm transition-all has-[:focus]:border-primary/50 has-[:focus]:ring-4 has-[:focus]:ring-primary/10">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex-shrink-0 self-end pb-1 text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer"
+                    aria-label="Add attachment"
                   >
-                    {item.label}
-                  </span>
-                </Link>
-              );
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  <p>Add attachment</p>
+                </TooltipContent>
+              </Tooltip>
 
-              return isExpanded ? (
-                <div key={item.href}>{link}</div>
-              ) : (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </nav>
+              <textarea
+                value={inputValue}
+                onInput={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="What would you like to create today?"
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 min-h-[28px] border-0 outline-0 focus:ring-0"
+                style={{ maxHeight: "200px" }}
+              />
 
-          {/* Footer */}
-          <div className="px-2 py-2 border-t border-border">
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                {userInitial}
-              </div>
-
-              <div
-                className={cn(
-                  "transition-all overflow-hidden",
-                  isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-                )}
-              >
-                <p className="text-sm font-medium truncate">
-                  {userEmail || "User"}
-                </p>
-                <p className="text-xs text-muted-foreground">Free Plan</p>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!inputValue.trim()}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background transition-all hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground/40 cursor-pointer disabled:cursor-not-allowed"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  <p>Send message</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
-        </aside>
 
-        {/* Main */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <Header />
-          <main className="flex-1 overflow-auto bg-muted/10">
-            {children}
-          </main>
+          <section className="space-y-4 pt-4">
+            <ContentHistory
+              items={items}
+              isLoading={isLoading}
+              onDelete={handleDelete}
+            />
+          </section>
         </div>
+
+        <DeleteToast
+          isVisible={showToast}
+          onUndo={handleUndo}
+          onClose={() => setShowToast(false)}
+        />
       </div>
     </TooltipProvider>
   );
