@@ -12,6 +12,7 @@ import {
   HelpCircle,
   PanelLeftClose,
   PanelLeft,
+  Loader2,
 } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import { useAuth } from "@/auth/auth.context";
@@ -58,7 +59,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { status, user } = useAuth();
+  const { ready, status, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -70,7 +71,7 @@ export default function DashboardLayout({
 
   const handleMouseEnter = () => {
     if (isPinned) return;
-    
+
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
     }, SIDEBAR_EXPAND_DELAY);
@@ -92,7 +93,10 @@ export default function DashboardLayout({
     };
   }, []);
 
+  // Redirect logic - only after auth is ready
   useEffect(() => {
+    if (!ready) return;
+
     if (status === "guest") {
       router.replace("/login");
     }
@@ -100,8 +104,21 @@ export default function DashboardLayout({
     if (status === "unverified") {
       router.replace("/login?reason=verify-email");
     }
-  }, [status, router]);
+  }, [ready, status, router]);
 
+  // Show loading while auth is initializing
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard for non-authenticated users
   if (status !== "auth") {
     return null;
   }

@@ -1,51 +1,69 @@
-import { AuthContextValue, AuthUser, AuthStatus } from "../auth.types";
+import { AuthAdapter, AuthUser, AuthStatus, AuthSubscriber, AuthState } from "../auth.types";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-export function createSupabaseAuth(): AuthContextValue {
+export function createSupabaseAuth(): AuthAdapter {
   const supabase = supabaseBrowser();
 
   let ready = false;
   let status: AuthStatus = "guest";
   let user: AuthUser | null = null;
 
-  // Initial session check (CRITICAL for OAuth)
-  supabase.auth.getSession().then(({ data }) => {
-    const sessionUser = data.session?.user;
+  // Subscribers list
+  const subscribers = new Set<AuthSubscriber>();
 
-    if (sessionUser) {
-      status = sessionUser.email_confirmed_at ? "auth" : "unverified";
-      user = {
-        id: sessionUser.id,
-        email: sessionUser.email ?? "",
-        name: sessionUser.user_metadata?.full_name,
-        avatarUrl: sessionUser.user_metadata?.avatar_url,
-      };
-    } else {
-      status = "guest";
-      user = null;
+  // Notify all subscribers of state change
+  function notify() {
+    const state: AuthState = { ready, status, user };
+    subscribers.forEach((callback) => callback(state));
+  }
+
+  // Update state helper
+  function updateState(newReady: boolean, newStatus: AuthStatus, newUser: AuthUser | null) {
+    ready = newReady;
+    status = newStatus;
+    user = newUser;
+    notify();
+  }
+
+  // Parse session user to AuthUser
+  function parseUser(sessionUser: { 
+    id: string; 
+    email?: string; 
+    email_confirmed_at?: string | null;
+    user_metadata?: { full_name?: string; avatar_url?: string };
+  } | undefined | null): { status: AuthStatus; user: AuthUser | null } {
+    if (!sessionUser) {
+      return { status: "guest", user: null };
     }
 
-    ready = true;
+    const authUser: AuthUser = {
+      id: sessionUser.id,
+      email: sessionUser.email ?? "",
+      name: sessionUser.user_metadata?.full_name,
+      avatarUrl: sessionUser.user_metadata?.avatar_url,
+    };
+
+    const authStatus: AuthStatus = sessionUser.email_confirmed_at ? "auth" : "unverified";
+
+    return { status: authStatus, user: authUser };
+  }
+
+  // Initial session check
+  supabase.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      console.error("[SupabaseAuth] getSession error:", error.message);
+      updateState(true, "guest", null);
+      return;
+    }
+
+    const { status: newStatus, user: newUser } = parseUser(data.session?.user);
+    updateState(true, newStatus, newUser);
   });
 
-  // Listen to auth state changes (login / logout / OAuth complete)
-  supabase.auth.onAuthStateChange((_event, session) => {
-    const sessionUser = session?.user;
-
-    if (sessionUser) {
-      status = sessionUser.email_confirmed_at ? "auth" : "unverified";
-      user = {
-        id: sessionUser.id,
-        email: sessionUser.email ?? "",
-        name: sessionUser.user_metadata?.full_name,
-        avatarUrl: sessionUser.user_metadata?.avatar_url,
-      };
-    } else {
-      status = "guest";
-      user = null;
-    }
-
-    ready = true;
+  // Listen to auth state changes
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { status: newStatus, user: newUser } = parseUser(session?.user);
+    updateState(true, newStatus, newUser);
   });
 
   return {
@@ -61,18 +79,37 @@ export function createSupabaseAuth(): AuthContextValue {
       return user;
     },
 
-    // Google OAuth
+    subscribe(callback: AuthSubscriber) {
+      subscribers.add(callback);
+
+      // Immediately call with current state
+      callback({ ready, status, user });
+
+      // Return unsubscribe function
+      return () => {
+        subscribers.delete(callback);
+      };
+    },
+
     async signIn() {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+
+      if (error) {
+        console.error("[SupabaseAuth] signIn error:", error.message);
+      }
     },
 
     async signOut() {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("[SupabaseAuth] signOut error:", error.message);
+      }
     },
   };
 }
