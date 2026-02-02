@@ -73,6 +73,24 @@ export default function DashboardPage() {
     setShowToast(false);
   };
 
+  const handleRetry = (id: string) => {
+    // Set the item status back to pending and simulate retry
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: "pending" as const } : item
+      )
+    );
+
+    // Simulate async retry - in production this would call your API
+    setTimeout(() => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "success" as const } : item
+        )
+      );
+    }, 2000);
+  };
+
   const handleSubmit = () => {
     if (!inputValue.trim()) return;
 
@@ -166,6 +184,7 @@ export default function DashboardPage() {
               items={items}
               isLoading={isLoading}
               onDelete={handleDelete}
+              onRetry={handleRetry}
             />
           </section>
         </div>

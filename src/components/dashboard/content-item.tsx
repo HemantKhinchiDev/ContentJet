@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ContentItem } from "@/app/dashboard/page";
+import { ContentItem } from "@/types/content";
 import { StatusBadge } from "./status-badge";
 import { formatRelativeDate } from "@/lib/utils";
 

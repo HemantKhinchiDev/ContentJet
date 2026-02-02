@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ContentStatus } from "@/app/dashboard/page";
+import { ContentStatus } from "@/types/content";
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {

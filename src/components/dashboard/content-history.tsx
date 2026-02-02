@@ -1,4 +1,4 @@
-import { ContentItem } from "@/app/dashboard/page";
+import { ContentItem } from "@/types/content";
 import { ContentItemComponent } from "./content-item";
 import { ContentSkeleton } from "./content-skeleton";
 import { EmptyContentState } from "./empty-content-state";
