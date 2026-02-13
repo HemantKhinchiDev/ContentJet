@@ -5,14 +5,14 @@ import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  
+
   // Magic Link / Email Verification logic
   const token_hash = searchParams.get('token_hash');
   const type = searchParams.get('type');
-  
+
   // OAuth logic
   const code = searchParams.get('code');
-  
+
   const next = searchParams.get('next') ?? '/dashboard';
 
   const cookieStore = await cookies();
@@ -40,17 +40,28 @@ export async function GET(request: NextRequest) {
 
   // 1. Handle Email Verification (Token Hash)
   if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      type: type as any,
+    console.log('[Auth Callback] Email verification attempt:', {
+      type,
+      token_hash: token_hash.substring(0, 10) + '...',
+      next,
+    });
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: type as 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email',
       token_hash,
     });
 
     if (!error) {
+      console.log('[Auth Callback] ✅ Email verified successfully:', data);
       return NextResponse.redirect(`${origin}${next}`);
     }
-    
-    console.error('[Auth] Verify OTP Error:', error);
-    return NextResponse.redirect(`${origin}/auth/error?error=verification_failed`);
+
+    console.error('[Auth Callback] ❌ Verify OTP Error:', {
+      message: error.message,
+      status: error.status,
+      name: error.name,
+    });
+    return NextResponse.redirect(`${origin}/login?reason=verification-failed`);
   }
 
   // 2. Handle OAuth (Code Exchange)
@@ -59,7 +70,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
-    
+
     console.error('[Auth] Code Exchange Error:', error);
     return NextResponse.redirect(`${origin}/auth/error?error=exchange_failed`);
   }
