@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/auth/auth.context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,10 @@ import { Input } from "@/components/ui/input";
  */
 export function DevLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
+
+  const redirect = searchParams.get("next") || "/dashboard";
 
   const [email, setEmail] = useState("dev@localhost");
   const [password, setPassword] = useState("dev");
@@ -31,11 +34,19 @@ export function DevLoginForm() {
 
     try {
       await signIn();
-      router.push("/dashboard");
-      router.refresh();
+
+      // Set cookie for middleware authentication (backup mechanism)
+      document.cookie = 'dev-auth-token=true; path=/; max-age=86400';
+
+      // Debug logging
+      console.log('✅ SignIn complete, redirecting to:', redirect);
+
+      // Use window.location for guaranteed redirect
+      // router.push() can be unreliable during auth state changes
+      window.location.href = redirect;
+
     } catch (error) {
-      console.error("Dev login error:", error);
-    } finally {
+      console.error("❌ Dev login error:", error);
       setLoading(false);
     }
   };

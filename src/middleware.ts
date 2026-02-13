@@ -23,6 +23,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // ✅ CRITICAL: In development, bypass Supabase auth check
+  // Fake auth uses localStorage, not Supabase sessions/cookies
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔓 [Middleware] Development mode - allowing access to:", pathname);
+    return NextResponse.next();
+  }
+
   // Create response object (needed for cookie modifications)
   let res = NextResponse.next({
     request: {
@@ -72,23 +79,14 @@ export async function middleware(req: NextRequest) {
     error,
   } = await supabase.auth.getUser();
 
-  // Debug logging (remove in production if too verbose)
-  if (process.env.NODE_ENV === "development") {
-    console.log("[Middleware]", pathname, {
-      hasUser: !!user,
-      userEmail: user?.email,
-      error: error?.message,
-    });
-  }
-
   // Redirect unauthenticated users to login
   if (!user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
-    
+
     // Optionally preserve the intended destination
     loginUrl.searchParams.set("next", pathname);
-    
+
     return NextResponse.redirect(loginUrl);
   }
 

@@ -123,8 +123,9 @@ function ProductionLoginForm() {
         return;
       }
 
-      router.push(redirect);
-      router.refresh();
+      // Use window.location for guaranteed redirect
+      // router.push() can be unreliable during auth state changes
+      window.location.href = redirect;
     }
 
     if (mode === "signup") {
