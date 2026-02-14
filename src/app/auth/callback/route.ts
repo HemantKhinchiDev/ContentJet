@@ -62,20 +62,28 @@ export async function GET(request: NextRequest) {
             console.log('[Auth Callback] 🔄 Attempting to update Prisma user...');
             const { prisma } = await import('@/lib/prisma');
 
-            // We use updateMany to avoid error if user doesn't exist (though they should)
+            // We use upsert to ensure the user exists in Prisma
             // matching by email which is unique
-            const result = await prisma.user.updateMany({
+            const result = await prisma.user.upsert({
               where: {
                 email: data.user.email
               },
-              data: {
+              update: {
                 emailVerified: new Date(),
                 email_confirmed_at: new Date(),
                 updatedAt: new Date()
               },
+              create: {
+                id: data.user.id,
+                email: data.user.email,
+                emailVerified: new Date(),
+                email_confirmed_at: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }
             });
 
-            console.log('[Auth Callback] ✅ Prisma update result:', result);
+            console.log('[Auth Callback] ✅ Prisma upsert result:', result);
           } catch (prismaError) {
             console.error('[Auth Callback] ❌ Prisma update failed:', prismaError);
             // We consciously do NOT block the redirect. 
