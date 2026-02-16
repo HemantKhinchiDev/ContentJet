@@ -118,31 +118,32 @@
 }
 
 @layer base {
+
   /* Smooth scrolling for better UX */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Base border and outline */
   * {
     @apply border-border outline-ring/50;
   }
-  
+
   /* Body defaults */
   body {
     @apply bg-background text-foreground antialiased;
   }
-  
+
   /* Accessible focus styles */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
-  
+
   /* Text selection theming */
   ::selection {
     @apply bg-primary text-primary-foreground;
   }
-  
+
   /* Form elements base transitions */
   input,
   textarea,
@@ -150,9 +151,10 @@
   button {
     @apply transition-colors duration-150;
   }
-  
+
   /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -160,9 +162,140 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
-    
+
     html {
       scroll-behavior: auto;
     }
+  }
+}
+
+/* Custom Scrollbar & Selection Styles */
+@layer base {
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom Scrollbar - Thin Dark Style */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Firefox Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+
+  /* Selection Color - Indigo */
+  ::selection {
+    background: #5e6ad2;
+    color: white;
+  }
+
+  ::-moz-selection {
+    background: #5e6ad2;
+    color: white;
+  }
+}
+
+/* Linear.app Production Animations */
+@layer utilities {
+
+  /* Hero Fade In Up Animation */
+  @keyframes heroFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Blob Float Animation 1 - Purple */
+  @keyframes float1 {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate(50px, -40px) scale(1.1);
+    }
+
+    66% {
+      transform: translate(-30px, 30px) scale(0.95);
+    }
+  }
+
+  /* Blob Float Animation 2 - Blue */
+  @keyframes float2 {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate(-40px, 50px) scale(1.05);
+    }
+
+    66% {
+      transform: translate(60px, -30px) scale(0.98);
+    }
+  }
+
+  /* Blob Float Animation 3 - Indigo */
+  @keyframes float3 {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    50% {
+      transform: translate(40px, -40px) scale(1.08) rotate(5deg);
+    }
+  }
+
+  /* Animation Classes */
+  .animate-heroFadeIn {
+    animation: heroFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-float1 {
+    animation: float1 25s ease-in-out infinite;
+  }
+
+  .animate-float2 {
+    animation: float2 30s ease-in-out infinite;
+  }
+
+  .animate-float3 {
+    animation: float3 35s ease-in-out infinite;
+  }
+
+  /* 3D Perspective Utility */
+  .perspective-2000 {
+    perspective: 2000px;
   }
 }
