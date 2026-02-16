@@ -54,7 +54,7 @@ export function Header() {
                             onMouseEnter={() => setFeaturesOpen(true)}
                             onMouseLeave={() => setFeaturesOpen(false)}
                         >
-                            <button className="cursor-pointer flex items-center gap-1 text-[13px] text-white/50 hover:text-white/90 transition">
+                            <button aria-label="Open features menu" className="cursor-pointer flex items-center gap-1 text-[13px] text-white/50 hover:text-white/90 transition">
                                 Features
                                 <ChevronDown size={14} className={`transition-transform ${featuresOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -112,7 +112,7 @@ export function Header() {
                             onMouseEnter={() => setCompanyOpen(true)}
                             onMouseLeave={() => setCompanyOpen(false)}
                         >
-                            <button className="cursor-pointer flex items-center gap-1 text-[13px] text-white/50 hover:text-white/90 transition">
+                            <button aria-label="Open company menu" className="cursor-pointer flex items-center gap-1 text-[13px] text-white/50 hover:text-white/90 transition">
                                 Company
                                 <ChevronDown size={14} className={`transition-transform ${companyOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -161,6 +161,7 @@ export function Header() {
 
                         {/* Mobile Menu Button */}
                         <button
+                            aria-label="Toggle mobile menu"
                             className="md:hidden text-white/60 cursor-pointer"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         >
@@ -181,17 +182,14 @@ export function Header() {
                         style={{ paddingTop: '57px' }}
                     >
                         <div className="p-6 space-y-6">
-                            {['Features', 'Customers', 'Changelog', 'Pricing', 'Company', 'Docs'].map((item, idx) => (
-                                <motion.a
+                            {['Features', 'Customers', 'Changelog', 'Pricing', 'Company', 'Docs'].map((item) => (
+                                <a
                                     key={item}
                                     href={`/${item.toLowerCase()}`}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="cursor-pointer block text-2xl text-white/80"
+                                    className="cursor-pointer block text-2xl text-white/80 hover:text-white transition-colors"
                                 >
                                     {item}
-                                </motion.a>
+                                </a>
                             ))}
                         </div>
                     </motion.div>

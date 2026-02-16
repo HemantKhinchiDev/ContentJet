@@ -1,9 +1,26 @@
+'use client'
+
+import dynamic from 'next/dynamic'
 import { Header } from '@/components/landing/Header'
 import { HeroSection } from '@/components/landing/HeroSection'
-import { FeaturesSection } from '@/components/landing/FeaturesSection'
-import { TestimonialsSection } from '@/components/landing/TestimonialsSection'
-import { CTASection } from '@/components/landing/CTASection'
-import { Footer } from '@/components/landing/Footer'
+
+// Lazy load below-the-fold components
+const FeaturesSection = dynamic(() => import('@/components/landing/FeaturesSection').then(mod => ({ default: mod.FeaturesSection })), {
+  loading: () => <div className="min-h-[600px]" />
+})
+
+const TestimonialsSection = dynamic(() => import('@/components/landing/TestimonialsSection').then(mod => ({ default: mod.TestimonialsSection })), {
+  loading: () => <div className="min-h-[500px]" />
+})
+
+const CTASection = dynamic(() => import('@/components/landing/CTASection').then(mod => ({ default: mod.CTASection })), {
+  loading: () => <div className="min-h-[400px]" />
+})
+
+const Footer = dynamic(() => import('@/components/landing/Footer').then(mod => ({ default: mod.Footer })), {
+  loading: () => <div className="min-h-[300px]" />
+})
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
