@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   // 🔴 IMPORTANT: create redirect response FIRST
   const response = NextResponse.redirect(`${origin}${next}`)
