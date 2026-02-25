@@ -51,7 +51,13 @@ export async function GET(_request: NextRequest) {
 
         const { data, error } = await supabase
             .from('subscriptions')
-            .select('id, user_id, plan_type, status, start_date, end_date, created_at')
+            .select(
+                // Omit raw Stripe IDs (stripe_customer_id, stripe_subscription_id) to
+                // avoid exposing enumerable handles to the client — portal sessions are
+                // created server-side via create-portal-session instead.
+                'id, user_id, plan_type, status, start_date, end_date, created_at, ' +
+                'current_period_end, cancel_at_period_end'
+            )
             .eq('user_id', user.id)
             .eq('status', 'active')
             .order('created_at', { ascending: false })
