@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Loader2,
+  CreditCard,
 } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import { useAuth } from "@/auth/auth.context";
@@ -54,6 +55,11 @@ const navItems = [
 
 const SIDEBAR_EXPAND_DELAY = 400;
 
+interface Subscription {
+  plan_type: string;
+  stripe_customer_id?: string | null;
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -66,6 +72,9 @@ export default function DashboardLayout({
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const isExpanded = isPinned || isHovered;
 
@@ -105,6 +114,28 @@ export default function DashboardLayout({
       router.replace("/login?reason=verify-email");
     }
   }, [ready, status, router]);
+
+  // Fetch subscription once authenticated
+  useEffect(() => {
+    if (status !== "auth") return;
+    fetch("/api/subscriptions")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setSubscription(data))
+      .catch(() => { });
+  }, [status]);
+
+  const handleManageBilling = useCallback(async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/create-portal-session", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // silently fail
+    } finally {
+      setPortalLoading(false);
+    }
+  }, []);
 
   // Show loading while auth is initializing
   if (!ready) {
@@ -278,13 +309,13 @@ export default function DashboardLayout({
                       <p className="text-sm font-medium text-foreground truncate leading-tight">
                         {userEmail || "User"}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight">Free Plan</p>
+                      <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
                     </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
                   <p className="font-medium">{userEmail || "User"}</p>
-                  <p className="text-xs text-muted-foreground">Free Plan</p>
+                  <p className="text-xs text-muted-foreground capitalize">{subscription ? subscription.plan_type : 'free'} Plan</p>
                 </TooltipContent>
               </Tooltip>
             ) : (
@@ -302,9 +333,22 @@ export default function DashboardLayout({
                   <p className="text-sm font-medium text-foreground truncate leading-tight">
                     {userEmail || "User"}
                   </p>
-                  <p className="text-xs text-muted-foreground leading-tight">Free Plan</p>
+                  <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
                 </div>
               </div>
+            )}
+
+            {/* Manage Subscription — only shown when expanded and has paid plan */}
+            {isExpanded && subscription?.stripe_customer_id && (
+              <button
+                id="manage-billing-btn"
+                onClick={handleManageBilling}
+                disabled={portalLoading}
+                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer w-full text-left disabled:opacity-50"
+              >
+                <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
+                {portalLoading ? "Loading…" : "Manage billing"}
+              </button>
             )}
           </div>
         </aside>
