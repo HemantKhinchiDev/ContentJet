@@ -41,7 +41,7 @@ export async function GET(_request: NextRequest) {
                 return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
             }
             console.error('[GET /api/users]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 500 })
         }
 
         return NextResponse.json(data)
@@ -90,6 +90,10 @@ export async function PATCH(request: NextRequest) {
                 return NextResponse.json({ error: `'${field}' must be a string` }, { status: 400 })
             }
             const trimmed = value.trim()
+            // Issue 7: reject whitespace-only strings
+            if (trimmed.length === 0) {
+                return NextResponse.json({ error: `'${field}' cannot be empty` }, { status: 400 })
+            }
             if (field === 'full_name' && trimmed.length > 100) {
                 return NextResponse.json({ error: "'full_name' must be 100 characters or fewer" }, { status: 400 })
             }
@@ -115,7 +119,7 @@ export async function PATCH(request: NextRequest) {
 
         if (error) {
             console.error('[PATCH /api/users]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to update user profile' }, { status: 500 })
         }
 
         return NextResponse.json(data)

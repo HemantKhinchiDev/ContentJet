@@ -20,6 +20,11 @@ import type { NextRequest } from 'next/server'
 const VALID_CONTENT_TYPES = ['image', 'video', 'text'] as const
 type ContentType = (typeof VALID_CONTENT_TYPES)[number]
 
+// Issue 9: validate UUID format before hitting the database
+function isValidUUID(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+}
+
 const DEFAULT_PAGE = 1
 const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 100
@@ -80,7 +85,7 @@ export async function GET(request: NextRequest) {
 
         if (error) {
             console.error('[GET /api/content-history]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to fetch content history' }, { status: 500 })
         }
 
         const total = count ?? 0
@@ -180,7 +185,7 @@ export async function POST(request: NextRequest) {
 
         if (error) {
             console.error('[POST /api/content-history]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to save content history' }, { status: 500 })
         }
 
         return NextResponse.json(data, { status: 201 })
@@ -222,6 +227,14 @@ export async function DELETE(request: NextRequest) {
             )
         }
 
+        // Issue 9: validate UUID format — prevents DB 500 on malformed input
+        if (!isValidUUID(id)) {
+            return NextResponse.json(
+                { error: "'id' must be a valid UUID (e.g. 3fdb1efb-6867-4b09-b9a5-c3a83e4dbde2)" },
+                { status: 400 },
+            )
+        }
+
         // Both conditions must match — prevents deleting another user's record
         const { data, error } = await supabase
             .from('content_history')
@@ -232,7 +245,7 @@ export async function DELETE(request: NextRequest) {
 
         if (error) {
             console.error('[DELETE /api/content-history]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to delete content history entry' }, { status: 500 })
         }
 
         if (!data || data.length === 0) {

@@ -3,15 +3,15 @@
 // Subscriptions API
 // ──────────────────
 // GET    /api/subscriptions → Fetch user's active subscription (null if none)
-// POST   /api/subscriptions → Create subscription (default: free, active)
+// POST   /api/subscriptions → Create or upgrade subscription (atomic upsert)
 // PATCH  /api/subscriptions → Update active subscription (plan_type, status, end_date)
 // DELETE /api/subscriptions → Soft-cancel (status='cancelled', end_date=NOW())
 //
 // Schema (subscriptions):
 //   id UUID PK, user_id UUID FK, plan_type TEXT, status TEXT,
-//   start_date TIMESTAMPTZ, end_date TIMESTAMPTZ, created_at TIMESTAMPTZ
+//   start_date TIMESTAMPTZ, end_date TIMESTAMPTZ, created_at TIMESTAMPTZ (DB default)
 //
-// ⚠️  COLUMN NAMES — use exactly as below:
+// ⚠️  COLUMN NAMES — use exactly:
 //   plan_type  (NOT "plan")
 //   start_date (NOT "started_at")
 //   end_date   (NOT "ends_at")
@@ -26,9 +26,15 @@ const VALID_STATUSES = ['active', 'cancelled', 'expired'] as const
 type PlanType = (typeof VALID_PLANS)[number]
 type Status = (typeof VALID_STATUSES)[number]
 
+// Issue 3: ISO timestamp validator used in PATCH end_date validation
+function isValidISODate(value: string): boolean {
+    const d = new Date(value)
+    return !isNaN(d.getTime())
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/subscriptions
-// Returns the active subscription, or { data: null } if none exists.
+// Returns the active subscription directly, or null if none exists.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET(_request: NextRequest) {
     try {
@@ -50,19 +56,19 @@ export async function GET(_request: NextRequest) {
             .eq('status', 'active')
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle() // returns null (not error) when no row found
+            .maybeSingle()
 
         if (error) {
+            // Issue 6: generic error message — don't leak internal DB details
             console.error('[GET /api/subscriptions]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to fetch subscription' }, { status: 500 })
         }
 
-        // ✅ Return null when no active subscription (not an error)
+        // Return null when no active subscription — not an error state
         if (!data) {
             return NextResponse.json(null)
         }
 
-        // ✅ Return flat object — NOT wrapped in { data }
         return NextResponse.json(data)
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Internal server error'
@@ -73,7 +79,13 @@ export async function GET(_request: NextRequest) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/subscriptions
-// Creates a new subscription. Cancels any existing active one first.
+// Truly atomic upsert via Supabase RPC.
+// Runs entirely inside a single PostgreSQL transaction — concurrent POSTs
+// cannot create duplicate active subscriptions.
+//
+// ⚠️  PREREQUISITE: Run the SQL in supabase/migrations/upsert_subscription.sql
+//     in your Supabase SQL editor before using this endpoint.
+//
 // Body: { plan_type?: 'free' | 'pro' | 'premium' }  (defaults to 'free')
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
@@ -93,7 +105,7 @@ export async function POST(request: NextRequest) {
         try {
             body = await request.json()
         } catch {
-            // Body is optional for POST — defaults apply below
+            // Body is optional — defaults apply below
         }
 
         const plan_type: PlanType = (body.plan_type as PlanType) ?? 'free'
@@ -105,36 +117,22 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const now = new Date().toISOString()
 
-        // Cancel any existing active subscription before creating a new one
-        const { error: cancelError } = await supabase
-            .from('subscriptions')
-            .update({ status: 'cancelled', end_date: now })
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-
-        if (cancelError) {
-            console.error('[POST /api/subscriptions] Cancel existing:', cancelError)
-            return NextResponse.json({ error: cancelError.message }, { status: 500 })
-        }
-
-        const { data, error } = await supabase
-            .from('subscriptions')
-            .insert({
-                user_id: user.id,
-                plan_type,
-                status: 'active' as Status,
-                start_date: now,
-                end_date: null,
-                created_at: now,
-            })
-            .select('id, user_id, plan_type, status, start_date, end_date, created_at')
-            .single()
+        // Truly atomic: entire upsert runs as a single PostgreSQL transaction.
+        // The RPC function uses pg_advisory_xact_lock(user_id) so concurrent
+        // calls for the same user are serialized at the DB level.
+        const { data, error } = await supabase.rpc('upsert_subscription', {
+            pplan_type: plan_type,
+        })
 
         if (error) {
-            console.error('[POST /api/subscriptions] Insert:', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            console.error('[POST /api/subscriptions] RPC error:', error)
+            return NextResponse.json({ error: 'Failed to upsert subscription' }, { status: 500 })
+        }
+
+        if (!data) {
+            console.error('[POST /api/subscriptions] RPC returned no data')
+            return NextResponse.json({ error: 'Failed to upsert subscription' }, { status: 500 })
         }
 
         return NextResponse.json(data, { status: 201 })
@@ -147,7 +145,7 @@ export async function POST(request: NextRequest) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PATCH /api/subscriptions
-// Updates the active subscription's plan_type, status, and/or end_date.
+// Updates active subscription in a single query (no TOCTOU race).
 // Body: { plan_type?: string, status?: string, end_date?: string | null }
 // ─────────────────────────────────────────────────────────────────────────────
 export async function PATCH(request: NextRequest) {
@@ -196,10 +194,23 @@ export async function PATCH(request: NextRequest) {
 
         if ('end_date' in body) {
             const ed = body.end_date
-            if (ed !== null && typeof ed !== 'string') {
-                return NextResponse.json({ error: "'end_date' must be an ISO timestamp string or null" }, { status: 400 })
+            if (ed === null) {
+                updates.end_date = null
+            } else if (typeof ed !== 'string') {
+                return NextResponse.json(
+                    { error: "'end_date' must be an ISO 8601 timestamp string or null" },
+                    { status: 400 },
+                )
+            } else {
+                // Issue 3: validate ISO format before storing
+                if (!isValidISODate(ed)) {
+                    return NextResponse.json(
+                        { error: "'end_date' must be a valid ISO 8601 timestamp" },
+                        { status: 400 },
+                    )
+                }
+                updates.end_date = ed
             }
-            updates.end_date = ed as string | null
         }
 
         if (Object.keys(updates).length === 0) {
@@ -209,34 +220,25 @@ export async function PATCH(request: NextRequest) {
             )
         }
 
-        // Find the current active subscription first
-        const { data: existing, error: fetchError } = await supabase
-            .from('subscriptions')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-        if (fetchError) {
-            return NextResponse.json({ error: fetchError.message }, { status: 500 })
-        }
-        if (!existing) {
-            return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
-        }
-
+        // Issues 4 & 5: Single UPDATE query — no separate fetch, no TOCTOU.
+        // .single() will produce PGRST116 if no active subscription matches.
         const { data, error } = await supabase
             .from('subscriptions')
             .update(updates)
-            .eq('id', existing.id)
             .eq('user_id', user.id)
+            .eq('status', 'active')
             .select('id, user_id, plan_type, status, start_date, end_date, created_at')
             .single()
 
+        // Issue 5: explicit PGRST116 → 404 (no active subscription found)
+        if (error?.code === 'PGRST116') {
+            return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
+        }
+
         if (error) {
+            // Issue 6: generic message — full error logged server-side only
             console.error('[PATCH /api/subscriptions]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 })
         }
 
         return NextResponse.json(data)
@@ -250,7 +252,7 @@ export async function PATCH(request: NextRequest) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/subscriptions
 // Soft-cancels the active subscription (status='cancelled', end_date=NOW()).
-// The row is retained for billing history — no hard deletes.
+// Row is preserved for billing history — no hard deletes.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function DELETE(_request: NextRequest) {
     try {
@@ -267,20 +269,24 @@ export async function DELETE(_request: NextRequest) {
 
         const now = new Date().toISOString()
 
+        // .single() ensures we target exactly one row.
+        // If the unique index (idx_unique_active_subscription) is in place,
+        // there can only ever be one active subscription per user anyway.
         const { data, error } = await supabase
             .from('subscriptions')
             .update({ status: 'cancelled', end_date: now })
             .eq('user_id', user.id)
             .eq('status', 'active')
             .select('id, plan_type, status, end_date')
+            .single()
+
+        if (error?.code === 'PGRST116') {
+            return NextResponse.json({ error: 'No active subscription to cancel' }, { status: 404 })
+        }
 
         if (error) {
             console.error('[DELETE /api/subscriptions]', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
-        }
-
-        if (!data || data.length === 0) {
-            return NextResponse.json({ error: 'No active subscription to cancel' }, { status: 404 })
+            return NextResponse.json({ error: 'Failed to cancel subscription' }, { status: 500 })
         }
 
         return NextResponse.json({ message: 'Subscription cancelled successfully', cancelled: data })
