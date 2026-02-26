@@ -1,7 +1,16 @@
 'use client'
 
 import { ChevronRight } from 'lucide-react'
-import { DashboardMockup } from './DashboardMockup'
+import dynamic from 'next/dynamic'
+
+const DashboardMockup = dynamic(() => import('./DashboardMockup').then(mod => mod.DashboardMockup), {
+    ssr: false,
+    loading: () => (
+        <div className="w-full rounded-xl border border-white/[0.08] bg-[#111113] min-h-[680px] animate-pulse flex items-center justify-center">
+            <span className="text-white/20 text-sm">Loading Preview...</span>
+        </div>
+    )
+})
 
 export function HeroSection() {
     return (

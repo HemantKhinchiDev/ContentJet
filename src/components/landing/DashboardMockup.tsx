@@ -28,17 +28,12 @@ export function DashboardMockup() {
         }
     }, [])
 
+    // Reduced from 10 to 4 to minimize DOM size and main-thread work for the landing page
     const issues = [
         { status: 'in-progress', priority: 'urgent', id: 'CJ-241', title: 'Implement OAuth integration for enterprise SSO', label: 'Feature', labelColor: '#5e6ad2', assignee: 'SK', date: 'Feb 14' },
-        { status: 'in-progress', priority: 'high', id: 'CJ-240', title: 'Fix memory leak in WebSocket connection handler', label: 'Bug', labelColor: '#f43f5e', assignee: 'AM', date: 'Feb 14' },
         { status: 'done', priority: 'high', id: 'CJ-239', title: 'Add real-time collaboration cursors to editor', label: 'Feature', labelColor: '#5e6ad2', assignee: 'RT', date: 'Feb 12' },
-        { status: 'done', priority: 'medium', id: 'CJ-238', title: 'Optimize database query performance for analytics', label: 'Improvement', labelColor: '#22d3ee', assignee: 'LC', date: 'Feb 12' },
-        { status: 'done', priority: 'low', id: 'CJ-237', title: 'Update landing page hero section design', label: 'Design', labelColor: '#f59e0b', assignee: 'MK', date: 'Feb 11' },
         { status: 'todo', priority: 'medium', id: 'CJ-236', title: 'Add API rate limiting for public endpoints', label: 'Performance', labelColor: '#10b981', assignee: 'NP', date: 'Feb 15' },
-        { status: 'todo', priority: 'low', id: 'CJ-235', title: 'Write documentation for new webhook events', label: 'Docs', labelColor: '#8b5cf6', assignee: 'JD', date: 'Feb 16' },
         { status: 'backlog', priority: 'low', id: 'CJ-234', title: 'Implement dark mode theme switcher', label: 'Feature', labelColor: '#5e6ad2', assignee: 'SK', date: 'Feb 20' },
-        { status: 'backlog', priority: 'medium', id: 'CJ-233', title: 'Add automated security scan to CI pipeline', label: 'Security', labelColor: '#ec4899', assignee: 'AM', date: 'Feb 21' },
-        { status: 'backlog', priority: 'low', id: 'CJ-232', title: 'Improve error messages for failed API calls', label: 'DevOps', labelColor: '#6366f1', assignee: 'RT', date: 'Feb 22' },
     ]
 
     const groupedIssues = {
