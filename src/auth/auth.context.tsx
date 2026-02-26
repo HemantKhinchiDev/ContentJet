@@ -36,6 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [adapter] = useState(() => createAuthAdapter());
 
   useEffect(() => {
+    // Initial state sync FIRST to capture current state
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState({
+      ready: adapter.ready,
+      status: adapter.status,
+      user: adapter.user,
+    });
+
     // Subscribe to auth state changes from the adapter
     const unsubscribe = adapter.subscribe((newState) => {
       setState({
@@ -43,13 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status: newState.status,
         user: newState.user,
       });
-    });
-
-    // Initial state sync
-    setState({
-      ready: adapter.ready,
-      status: adapter.status,
-      user: adapter.user,
     });
 
     return () => {

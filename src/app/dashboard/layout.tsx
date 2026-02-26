@@ -14,10 +14,12 @@ import {
   PanelLeft,
   Loader2,
   CreditCard,
+  Wand2,
 } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import { useAuth } from "@/auth/auth.context";
 import { cn } from "@/lib/utils";
+import { UsageProvider } from "@/context/UsageContext";
 import {
   Tooltip,
   TooltipContent,
@@ -30,6 +32,11 @@ const navItems = [
     label: "Project",
     href: "/dashboard",
     icon: FolderKanban,
+  },
+  {
+    label: "Generate",
+    href: "/dashboard/generate",
+    icon: Wand2,
   },
   {
     label: "History",
@@ -158,206 +165,208 @@ export default function DashboardLayout({
   const userInitial = userEmail.charAt(0).toUpperCase() || "?";
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="min-h-screen flex bg-background">
-        <aside
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          className={cn(
-            "border-r border-border bg-muted/20 flex flex-col transition-all duration-300 ease-in-out",
-            isExpanded ? "w-52" : "w-14"
-          )}
-        >
-          <div className="h-14 flex items-center border-b border-border relative px-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300">
-                <span className="text-sm font-bold text-white dark:text-zinc-900">CJ</span>
+    <UsageProvider>
+      <TooltipProvider delayDuration={0}>
+        <div className="min-h-screen flex bg-background">
+          <aside
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={cn(
+              "border-r border-border bg-muted/20 flex flex-col transition-all duration-300 ease-in-out",
+              isExpanded ? "w-52" : "w-14"
+            )}
+          >
+            <div className="h-14 flex items-center border-b border-border relative px-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300">
+                  <span className="text-sm font-bold text-white dark:text-zinc-900">CJ</span>
+                </div>
+
+                <span
+                  className={cn(
+                    "font-semibold text-sm text-foreground tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
+                    isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                  )}
+                >
+                  ContentJet
+                </span>
               </div>
 
-              <span
-                className={cn(
-                  "font-semibold text-sm text-foreground tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                  isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                )}
-              >
-                ContentJet
-              </span>
-            </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setIsPinned(!isPinned)}
-                  aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-                  className={cn(
-                    "absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 cursor-pointer",
-                    isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
-                  )}
-                >
-                  {isPinned ? (
-                    <PanelLeftClose className="h-3.5 w-3.5" />
-                  ) : (
-                    <PanelLeft className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                <p>{isPinned ? "Unpin sidebar" : "Pin sidebar"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          <nav className="flex-1 px-2 py-3 space-y-0.5">
-            {navItems.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-
-              const navLink = (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
-                    isActive
-                      ? "bg-accent text-foreground font-medium"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-
-                  <span
-                    className={cn(
-                      "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                      isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              );
-
-              if (!isExpanded) {
-                return (
-                  <Tooltip key={item.href}>
-                    <TooltipTrigger asChild>{navLink}</TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={8}>
-                      <p>{item.label}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-
-              return <div key={item.href}>{navLink}</div>;
-            })}
-          </nav>
-
-          <div className="px-2 py-2 border-t border-border space-y-1">
-            {!isExpanded ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link
-                    href="/help"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
+                  <button
+                    onClick={() => setIsPinned(!isPinned)}
+                    aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+                    className={cn(
+                      "absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 cursor-pointer",
+                      isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
+                    )}
                   >
-                    <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                    {isPinned ? (
+                      <PanelLeftClose className="h-3.5 w-3.5" />
+                    ) : (
+                      <PanelLeft className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{isPinned ? "Unpin sidebar" : "Pin sidebar"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <nav className="flex-1 px-2 py-3 space-y-0.5">
+              {navItems.map((item) => {
+                const isActive =
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(item.href);
+
+                const navLink = (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
+                      isActive
+                        ? "bg-accent text-foreground font-medium"
+                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+
                     <span
                       className={cn(
                         "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
                         isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
                       )}
                     >
-                      Help & Support
+                      {item.label}
                     </span>
                   </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  <p>Help & Support</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Link
-                href="/help"
-                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
-              >
-                <HelpCircle className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={cn(
-                    "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                    isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                  )}
-                >
-                  Help & Support
-                </span>
-              </Link>
-            )}
+                );
 
-            {!isExpanded ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      {userInitial}
-                    </div>
+                if (!isExpanded) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+                      <TooltipContent side="right" sideOffset={8}>
+                        <p>{item.label}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
 
-                    <div
-                      className={cn(
-                        "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
-                        isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                      )}
+                return <div key={item.href}>{navLink}</div>;
+              })}
+            </nav>
+
+            <div className="px-2 py-2 border-t border-border space-y-1">
+              {!isExpanded ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/help"
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
                     >
-                      <p className="text-sm font-medium text-foreground truncate leading-tight">
-                        {userEmail || "User"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  <p className="font-medium">{userEmail || "User"}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{subscription ? subscription.plan_type : 'free'} Plan</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  {userInitial}
-                </div>
-
-                <div
-                  className={cn(
-                    "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
-                    isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                  )}
+                      <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                      <span
+                        className={cn(
+                          "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
+                          isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                        )}
+                      >
+                        Help & Support
+                      </span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    <p>Help & Support</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  href="/help"
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
                 >
-                  <p className="text-sm font-medium text-foreground truncate leading-tight">
-                    {userEmail || "User"}
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
+                  <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                  <span
+                    className={cn(
+                      "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
+                      isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                    )}
+                  >
+                    Help & Support
+                  </span>
+                </Link>
+              )}
+
+              {!isExpanded ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        {userInitial}
+                      </div>
+
+                      <div
+                        className={cn(
+                          "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
+                          isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                        )}
+                      >
+                        <p className="text-sm font-medium text-foreground truncate leading-tight">
+                          {userEmail || "User"}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    <p className="font-medium">{userEmail || "User"}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{subscription ? subscription.plan_type : 'free'} Plan</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    {userInitial}
+                  </div>
+
+                  <div
+                    className={cn(
+                      "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
+                      isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                    )}
+                  >
+                    <p className="text-sm font-medium text-foreground truncate leading-tight">
+                      {userEmail || "User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Manage Subscription — only shown when expanded and has paid plan */}
-            {isExpanded && subscription?.stripe_customer_id && (
-              <button
-                id="manage-billing-btn"
-                onClick={handleManageBilling}
-                disabled={portalLoading}
-                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer w-full text-left disabled:opacity-50"
-              >
-                <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
-                {portalLoading ? "Loading…" : "Manage billing"}
-              </button>
-            )}
+              {/* Manage Subscription — only shown when expanded and has paid plan */}
+              {isExpanded && subscription?.stripe_customer_id && (
+                <button
+                  id="manage-billing-btn"
+                  onClick={handleManageBilling}
+                  disabled={portalLoading}
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer w-full text-left disabled:opacity-50"
+                >
+                  <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
+                  {portalLoading ? "Loading…" : "Manage billing"}
+                </button>
+              )}
+            </div>
+          </aside>
+
+          <div className="flex-1 flex flex-col min-w-0">
+            <Header />
+            <main className="flex-1 overflow-auto bg-muted/10">{children}</main>
           </div>
-        </aside>
-
-        <div className="flex-1 flex flex-col min-w-0">
-          <Header />
-          <main className="flex-1 overflow-auto bg-muted/10">{children}</main>
         </div>
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </UsageProvider>
   );
 }

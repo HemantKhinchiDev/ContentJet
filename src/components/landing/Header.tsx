@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Menu, X, Sparkles, Shield, Zap, Lock, Code, Activity } from 'lucide-react'
+import Link from 'next/link'
 import { Logo } from './Logo'
 
 export function Header() {
@@ -42,9 +43,9 @@ export function Header() {
             >
                 <div className="max-w-[1436px] mx-auto px-6 h-14 flex items-center justify-between">
                     {/* Logo */}
-                    <a href="/" className="flex items-center cursor-pointer">
+                    <Link href="/" className="flex items-center cursor-pointer">
                         <Logo />
-                    </a>
+                    </Link>
 
                     {/* Center Nav - Desktop Only */}
                     <nav className="hidden md:flex items-center gap-6">
@@ -94,7 +95,7 @@ export function Header() {
                                                 <span className="text-white/20">·</span>
                                                 <a href="/docs" className="cursor-pointer text-white/40 hover:text-white/70">Documentation</a>
                                                 <span className="text-white/20">·</span>
-                                                <a href="/changelog" className="cursor-pointer text-white/40 hover:text-white/70">What's new</a>
+                                                <a href="/changelog" className="cursor-pointer text-white/40 hover:text-white/70">What&apos;s new</a>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -183,13 +184,14 @@ export function Header() {
                     >
                         <div className="p-6 space-y-6">
                             {['Features', 'Customers', 'Changelog', 'Pricing', 'Company', 'Docs'].map((item) => (
-                                <a
+                                <Link
                                     key={item}
                                     href={`/${item.toLowerCase()}`}
                                     className="cursor-pointer block text-2xl text-white/80 hover:text-white transition-colors"
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {item}
-                                </a>
+                                </Link>
                             ))}
                         </div>
                     </motion.div>

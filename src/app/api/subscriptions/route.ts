@@ -40,14 +40,12 @@ export async function GET(_request: NextRequest) {
     try {
         const supabase = await createSupabaseServerClient()
 
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
 
         const { data, error } = await supabase
             .from('subscriptions')
@@ -98,14 +96,12 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createSupabaseServerClient()
 
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
 
         let body: Record<string, unknown> = {}
         try {
@@ -158,14 +154,12 @@ export async function PATCH(request: NextRequest) {
     try {
         const supabase = await createSupabaseServerClient()
 
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
 
         let body: Record<string, unknown>
         try {
@@ -264,14 +258,12 @@ export async function DELETE(_request: NextRequest) {
     try {
         const supabase = await createSupabaseServerClient()
 
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
 
         const now = new Date().toISOString()
 

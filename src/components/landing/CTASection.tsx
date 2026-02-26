@@ -19,7 +19,7 @@ export function CTASection() {
                 {/* CTA Buttons */}
                 <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
                     <a href="/signup" className="cursor-pointer px-8 py-3 bg-white text-black text-[14px] font-medium rounded-full hover:bg-white/90 transition-all">
-                        Start building — it's free
+                        Start building — it&apos;s free
                     </a>
                     <a href="/contact" className="cursor-pointer px-8 py-3 border border-white/[0.15] bg-white/[0.03] text-white/60 hover:text-white/90 hover:bg-white/[0.06] text-[14px] font-medium rounded-full transition-all">
                         Talk to sales

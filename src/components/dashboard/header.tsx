@@ -11,7 +11,7 @@ export default function Header() {
       <div className="font-semibold text-foreground">Dashboard</div>
 
       <div className="flex items-center gap-2">
-        <UsageIndicator used={3} limit={10} isPro={false} />
+        <UsageIndicator isPro={false} />
 
         {/* Help */}
         <Button

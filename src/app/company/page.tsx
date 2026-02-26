@@ -16,7 +16,7 @@ export default function CompanyPage() {
                     About ContentJet
                 </h1>
                 <p className="text-[18px] text-white/40 max-w-[720px] mb-16">
-                    We're building tools that help teams ship better products faster.
+                    We&apos;re building tools that help teams ship better products faster.
                 </p>
                 {/* Company content will be added here */}
             </div>

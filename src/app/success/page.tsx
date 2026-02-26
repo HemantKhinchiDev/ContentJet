@@ -23,7 +23,9 @@ function SuccessContent() {
 
     useEffect(() => {
         if (!sessionId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setError('No session ID found. Please contact support.')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(false)
             return
         }
