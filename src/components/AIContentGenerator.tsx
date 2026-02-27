@@ -97,6 +97,21 @@ function AIContentGeneratorInner() {
         }
         return templates[0];
     });
+
+    useEffect(() => {
+        const queryTemplate = searchParams?.get('template');
+        if (queryTemplate) {
+            const found = templates.find(t => t.key === queryTemplate);
+            if (found && found.key !== selectedTemplate.key) {
+                setSelectedTemplate(found);
+                setVariables({});
+                setOutput(null);
+                setError(null);
+                setMetadata(null);
+            }
+        }
+    }, [searchParams, templates, selectedTemplate.key]);
+
     const [variables, setVariables] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -253,7 +268,7 @@ function AIContentGeneratorInner() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+                    <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
                         {/* Variables */}
                         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                             <h3 className="text-sm font-semibold text-foreground">Content Details</h3>
