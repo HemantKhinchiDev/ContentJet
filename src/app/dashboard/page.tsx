@@ -1,200 +1,212 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Send } from "lucide-react";
-import { ContentHistory } from "@/components/dashboard/content-history";
-import { DeleteToast } from "@/components/dashboard/delete-toast";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Plus,
+  FileText,
+  ArrowRight,
+  RefreshCw,
+  ChevronDown,
+  MessageSquare,
+  Mail,
+  Newspaper,
+  ShoppingBag,
+  Video,
+  Search,
+  Edit3
+} from "lucide-react";
+import { HistoryManager, HistoryItem } from "@/lib/history-manager";
 
-// ✅ Types moved OUT of page.tsx (important for production build)
-import { ContentItem } from "@/types/content";
-
-const mockContentItems: ContentItem[] = [
-  {
-    id: "1",
-    title: "10 AI Marketing Strategies for 2024",
-    type: "Blog Post",
-    createdAt: new Date(Date.now() - 1000 * 60 * 45),
-    status: "success",
-  },
-  {
-    id: "2",
-    title: "Product Launch Email Campaign",
-    type: "Email",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    status: "pending",
-  },
-  {
-    id: "3",
-    title: "Instagram Post: Spring Collection",
-    type: "Social Media",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    status: "success",
-  },
-  {
-    id: "4",
-    title: "SEO Landing Page Copy",
-    type: "Landing Page",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    status: "failed",
-  },
+const generateOptions = [
+  { name: 'Blog Post', href: '/dashboard/generate?template=BLOG_POST', icon: FileText },
+  { name: 'Social Media', href: '/dashboard/generate?template=SOCIAL_POST', icon: MessageSquare },
+  { name: 'Email Subject', href: '/dashboard/generate?template=EMAIL_SUBJECT', icon: Mail },
+  { name: 'Newsletter', href: '/dashboard/generate?template=EMAIL_NEWSLETTER', icon: Newspaper },
+  { name: 'Product Description', href: '/dashboard/generate?template=PRODUCT_DESCRIPTION', icon: ShoppingBag },
+  { name: 'Video Script', href: '/dashboard/generate?template=VIDEO_SCRIPT', icon: Video },
+  { name: 'SEO Meta', href: '/dashboard/generate?template=SEO_META', icon: Search },
+  { name: 'Content Rewrite', href: '/dashboard/generate?template=CONTENT_REWRITE', icon: Edit3 },
 ];
 
+function getCategoryName(category: string): string {
+  const names: Record<string, string> = {
+    blog: 'Blog',
+    social: 'Social',
+    email_subject: 'Email',
+    newsletter: 'Newsletter',
+    product: 'Product',
+    video_script: 'Video',
+    seo_meta: 'SEO',
+    rewrite: 'Rewrite',
+  };
+  return names[category] || category;
+}
+
+function formatTimeAgo(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return `Yesterday`;
+  return `${diffDays}d ago`;
+}
+
+function getMostUsedCategory(items: HistoryItem[]): string {
+  if (items.length === 0) return 'None';
+  const counts = items.reduce((acc, item) => {
+    acc[item.category] = (acc[item.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return getCategoryName(mostUsed[0]);
+}
+
 export default function DashboardPage() {
-  const [items, setItems] = useState<ContentItem[]>(mockContentItems);
-  const [deletedItem, setDeletedItem] = useState<ContentItem | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [isLoading] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<HistoryItem[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
-  const handleDelete = (id: string) => {
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
+  useEffect(() => {
+    setIsClient(true);
+    setRecentActivity(HistoryManager.getAll());
+  }, []);
 
-    setDeletedItem(item);
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    setShowToast(true);
-  };
-
-  const handleUndo = () => {
-    if (!deletedItem) return;
-
-    setItems((prev) =>
-      [...prev, deletedItem].sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-      )
-    );
-    setDeletedItem(null);
-    setShowToast(false);
-  };
-
-  const handleRetry = (id: string) => {
-    // Set the item status back to pending and simulate retry
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: "pending" as const } : item
-      )
-    );
-
-    // Simulate async retry - in production this would call your API
-    setTimeout(() => {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: "success" as const } : item
-        )
-      );
-    }, 2000);
-  };
-
-  const handleSubmit = () => {
-    if (!inputValue.trim()) return;
-
-    console.log("Generate content:", inputValue);
-
-    setInputValue("");
-
-    const textarea = document.querySelector("textarea");
-    if (textarea) {
-      textarea.style.height = "auto";
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-    setInputValue(target.value);
-
-    target.style.height = "auto";
-    target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
-  };
+  if (!isClient) return null;
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="min-h-full py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <header className="space-y-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Your Content
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage and view all your generated content
-            </p>
-          </header>
+    <div className="min-h-full py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <header className="space-y-1.5 mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Welcome back 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Here's what's happening with your content today.
+          </p>
+        </header>
 
-          {/* Input composer */}
-          <div className="relative">
-            <div className="flex items-end gap-2 rounded-3xl border border-border bg-background pl-4 pr-2 py-3 shadow-sm transition-all has-[:focus]:border-primary/50 has-[:focus]:ring-4 has-[:focus]:ring-primary/10">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex-shrink-0 self-end pb-1 text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer"
-                    aria-label="Add attachment"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={8}>
-                  <p>Add attachment</p>
-                </TooltipContent>
-              </Tooltip>
+        {/* Dashboard Placeholder Stats (Static for now) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="bg-card border border-border rounded-xl p-5 flex flex-col items-center justify-center space-y-1">
+            <span className="text-2xl font-bold">{recentActivity.length}</span>
+            <span className="text-sm text-muted-foreground">Total Content</span>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-5 flex flex-col items-center justify-center space-y-1">
+            <span className="text-2xl font-bold">{getMostUsedCategory(recentActivity)}</span>
+            <span className="text-sm text-muted-foreground">Most Used</span>
+          </div>
+        </div>
 
-              <textarea
-                value={inputValue}
-                onInput={handleInput}
-                onKeyDown={handleKeyDown}
-                placeholder="What would you like to create today?"
-                rows={1}
-                className="flex-1 resize-none bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/50 min-h-[28px] border-0 outline-0 focus:ring-0"
-                style={{ maxHeight: "200px" }}
-              />
+        {/* Recent Activity Section */}
+        <div className="bg-card border border-border rounded-xl p-6 mt-8">
+          {/* Header with Create New */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-foreground">
+              Recent Activity
+            </h2>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={!inputValue.trim()}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background transition-all hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground/40 cursor-pointer disabled:cursor-not-allowed"
-                    aria-label="Send message"
-                  >
-                    <Send className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={8}>
-                  <p>Send message</p>
-                </TooltipContent>
-              </Tooltip>
+            <div className="flex items-center gap-4">
+              {/* Create New Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCreateMenu(!showCreateMenu)}
+                  className="flex items-center gap-2 px-3 py-1.5 
+                           bg-gray-900 dark:bg-white 
+                           text-white dark:text-gray-900 
+                           text-sm font-medium rounded-lg
+                           hover:bg-gray-800 dark:hover:bg-gray-100 
+                           transition-colors
+                           shadow-sm"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={2} />
+                  Create New
+                </button>
+
+                {/* Dropdown Menu */}
+                {showCreateMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowCreateMenu(false)} />
+                    <div className="absolute top-full right-0 mt-2 w-56 z-20
+                                  bg-popover
+                                  border border-border
+                                  rounded-lg shadow-md overflow-hidden animate-in fade-in-0 zoom-in-95">
+                      <div className="py-1">
+                        {generateOptions.map((option) => (
+                          <Link
+                            key={option.href}
+                            href={option.href}
+                            onClick={() => setShowCreateMenu(false)}
+                            className="flex items-center gap-3 px-4 py-2.5
+                                       text-foreground
+                                       hover:bg-muted/50
+                                       transition-colors text-sm"
+                          >
+                            <option.icon className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                            {option.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* View All Link */}
+              <Link
+                href="/dashboard/history"
+                className="flex items-center gap-1 text-sm font-medium text-muted-foreground
+                         hover:text-foreground transition-colors"
+              >
+                View All
+                <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+              </Link>
             </div>
           </div>
 
-          <section className="space-y-4 pt-4">
-            <ContentHistory
-              items={items}
-              isLoading={isLoading}
-              onDelete={handleDelete}
-              onRetry={handleRetry}
-            />
-          </section>
+          {/* Activity List */}
+          {recentActivity.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-border rounded-lg">
+              <FileText className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-foreground">No recent activity</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Start creating content to see your history here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {recentActivity.slice(0, 5).map((item) => (
+                <Link
+                  key={item.id}
+                  href="/dashboard/history"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                           hover:bg-muted/50
+                           transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-muted/30 flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
+                    <FileText className="w-4 h-4" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {getCategoryName(item.category)} • {formatTimeAgo(item.timestamp)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        <DeleteToast
-          isVisible={showToast}
-          onUndo={handleUndo}
-          onClose={() => setShowToast(false)}
-        />
       </div>
-    </TooltipProvider>
+    </div>
   );
 }

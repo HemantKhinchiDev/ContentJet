@@ -15,6 +15,7 @@ import {
   Loader2,
   CreditCard,
   Wand2,
+  LayoutDashboard
 } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import { useAuth } from "@/auth/auth.context";
@@ -29,9 +30,9 @@ import {
 
 const navItems = [
   {
-    label: "Project",
+    label: "Dashboard",
     href: "/dashboard",
-    icon: FolderKanban,
+    icon: LayoutDashboard,
   },
   {
     label: "Generate",
@@ -42,16 +43,6 @@ const navItems = [
     label: "History",
     href: "/dashboard/history",
     icon: History,
-  },
-  {
-    label: "Today",
-    href: "/dashboard/today",
-    icon: CalendarDays,
-  },
-  {
-    label: "Template",
-    href: "/dashboard/template",
-    icon: LayoutTemplate,
   },
   {
     label: "Settings",

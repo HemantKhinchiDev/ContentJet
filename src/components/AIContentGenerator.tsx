@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Loader2, Copy, Download, CheckCheck, Sparkles, ChevronRight, Zap } from 'lucide-react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Loader2, Copy, Download, CheckCheck, Sparkles, ChevronRight, Zap, FileText, MessageSquare, Mail, Newspaper, ShoppingBag, Video, Search, Edit3 } from 'lucide-react';
 import { useUsage } from '@/context/UsageContext';
+import { HistoryManager, HistoryItem } from '@/lib/history-manager';
 
 // ─── Types (mirroring server types) ──────────────────────────────────────────
 
@@ -18,7 +20,7 @@ interface Template {
     key: string;
     name: string;
     description: string;
-    icon: string;
+    icon: any;
     variables: TemplateVariable[];
 }
 
@@ -39,19 +41,18 @@ function TemplatePill({ template, active, onClick }: {
     return (
         <button
             onClick={onClick}
-            className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group ${active
-                ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/40 text-foreground'
-                : 'hover:bg-muted/60 border border-transparent text-muted-foreground hover:text-foreground'
+            className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${active
+                ? 'bg-gray-100 dark:bg-[color:lab(10%_0_0)] text-gray-900 dark:text-white font-medium'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[color:lab(8%_0_0)] hover:text-gray-900 dark:hover:text-white'
                 }`}
         >
-            <span className="text-lg flex-shrink-0">{template.icon}</span>
+            <template.icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
             <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium truncate ${active ? 'text-foreground' : ''}`}>
+                <p className={`text-[14px] truncate ${active ? 'text-gray-900 dark:text-white font-medium' : 'font-medium'}`}>
                     {template.name.replace(/_/g, ' ')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{template.description}</p>
+                <p className={`text-xs truncate ${active ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{template.description}</p>
             </div>
-            <ChevronRight className={`h-3.5 w-3.5 flex-shrink-0 transition-transform ${active ? 'text-purple-400 translate-x-0.5' : 'opacity-0 group-hover:opacity-50'}`} />
         </button>
     );
 }
@@ -78,15 +79,24 @@ function MetadataBar({ metadata }: { metadata: GenerationMetadata }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AIContentGenerator() {
+function AIContentGeneratorInner() {
     const { incrementUsage } = useUsage();
+    const searchParams = useSearchParams();
+
     const [templates] = useState<Template[]>(() => {
         // Templates are hardcoded client-side to avoid an extra fetch.
         // They match what the server returns from listTemplates().
         return STATIC_TEMPLATES;
     });
 
-    const [selectedTemplate, setSelectedTemplate] = useState<Template>(templates[0]);
+    const [selectedTemplate, setSelectedTemplate] = useState<Template>(() => {
+        const queryTemplate = searchParams?.get('template');
+        if (queryTemplate) {
+            const found = templates.find((t) => t.key === queryTemplate);
+            if (found) return found;
+        }
+        return templates[0];
+    });
     const [variables, setVariables] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -132,6 +142,42 @@ export default function AIContentGenerator() {
             setOutput(data.content);
             setMetadata(data.metadata);
 
+            // Determine category mapping
+            const getCategory = (key: string): HistoryItem['category'] => {
+                const map: Record<string, HistoryItem['category']> = {
+                    'BLOG_POST': 'blog',
+                    'SOCIAL_POST': 'social',
+                    'EMAIL_SUBJECT': 'email_subject',
+                    'EMAIL_NEWSLETTER': 'newsletter',
+                    'PRODUCT_DESCRIPTION': 'product',
+                    'VIDEO_SCRIPT': 'video_script',
+                    'SEO_META': 'seo_meta',
+                    'CONTENT_REWRITE': 'rewrite',
+                };
+                return map[key] || 'blog'; // Fallback
+            };
+
+            // Get title based on template
+            const getTitle = () => {
+                return variables.topic ||
+                    variables.purpose ||
+                    variables.product ||
+                    variables.page ||
+                    'Untitled Generation';
+            };
+
+            // Save to history
+            try {
+                HistoryManager.save(
+                    getCategory(selectedTemplate.key),
+                    getTitle(),
+                    data.content,
+                    variables
+                );
+            } catch (historyError) {
+                console.warn('Failed to save to history:', historyError);
+            }
+
             // Update usage counter instantly via context
             incrementUsage();
         } catch {
@@ -174,7 +220,7 @@ export default function AIContentGenerator() {
             <aside className="w-64 flex-shrink-0 border-r border-border bg-muted/10 flex flex-col">
                 <div className="px-4 py-3 border-b border-border">
                     <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-purple-400" />
+                        <Sparkles className="h-4 w-4 text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
                         Templates
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">8 AI-powered formats</p>
@@ -196,7 +242,7 @@ export default function AIContentGenerator() {
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0">
                     <div className="flex items-start gap-3">
-                        <span className="text-2xl">{selectedTemplate.icon}</span>
+                        <selectedTemplate.icon className="w-6 h-6 flex-shrink-0 text-gray-900 dark:text-white" strokeWidth={1.5} />
                         <div>
                             <h1 className="text-lg font-semibold text-foreground">
                                 {selectedTemplate.name.replace(/_/g, ' ')}
@@ -252,7 +298,7 @@ export default function AIContentGenerator() {
                             id="generate-btn"
                             onClick={handleGenerate}
                             disabled={loading || !requiredFilled}
-                            className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                            className="w-full flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white dark:text-gray-900 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {loading ? (
                                 <>
@@ -261,7 +307,7 @@ export default function AIContentGenerator() {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="h-4 w-4" />
+                                    <Sparkles className="h-4 w-4" strokeWidth={1.5} />
                                     Generate Content
                                 </>
                             )}
@@ -321,6 +367,14 @@ export default function AIContentGenerator() {
     );
 }
 
+export default function AIContentGenerator() {
+    return (
+        <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+            <AIContentGeneratorInner />
+        </Suspense>
+    );
+}
+
 // ─── Static Template Data ─────────────────────────────────────────────────────
 // Keeps the component self-contained without a fetch on mount.
 // These match the server-side PROMPTS registry.
@@ -330,7 +384,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'BLOG_POST',
         name: 'BLOG POST',
         description: 'Long-form blog article with SEO-friendly structure',
-        icon: '📝',
+        icon: FileText,
         variables: [
             { key: 'topic', label: 'Topic', placeholder: 'e.g. How AI is changing content marketing', required: true, type: 'text' },
             { key: 'audience', label: 'Target Audience', placeholder: 'e.g. Marketing managers at B2B SaaS companies', required: true, type: 'text' },
@@ -342,7 +396,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'SOCIAL_POST',
         name: 'SOCIAL POST',
         description: 'Engaging social media posts for any platform',
-        icon: '📱',
+        icon: MessageSquare,
         variables: [
             { key: 'topic', label: 'Topic / Message', placeholder: 'e.g. Announcing our new product launch', required: true, type: 'text' },
             { key: 'platform', label: 'Platform', placeholder: 'e.g. LinkedIn, Twitter/X, Instagram', required: true, type: 'text' },
@@ -354,7 +408,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'EMAIL_SUBJECT',
         name: 'EMAIL SUBJECT',
         description: 'High open-rate email subject lines',
-        icon: '✉️',
+        icon: Mail,
         variables: [
             { key: 'purpose', label: 'Email Purpose', placeholder: "e.g. Weekly newsletter, Product launch", required: true, type: 'text' },
             { key: 'audience', label: 'Audience', placeholder: "e.g. Free trial users who haven't upgraded", required: true, type: 'text' },
@@ -365,7 +419,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'EMAIL_NEWSLETTER',
         name: 'EMAIL NEWSLETTER',
         description: 'Full email newsletter with sections and CTAs',
-        icon: '📰',
+        icon: Newspaper,
         variables: [
             { key: 'topic', label: 'Main Topic', placeholder: 'e.g. This week in AI tools for creators', required: true, type: 'text' },
             { key: 'audience', label: 'Audience', placeholder: 'e.g. Content creators and marketers', required: true, type: 'text' },
@@ -377,7 +431,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'PRODUCT_DESCRIPTION',
         name: 'PRODUCT DESCRIPTION',
         description: 'Conversion-focused product descriptions',
-        icon: '🛍️',
+        icon: ShoppingBag,
         variables: [
             { key: 'product', label: 'Product Name', placeholder: 'e.g. ContentJet Pro Subscription', required: true, type: 'text' },
             { key: 'features', label: 'Key Features', placeholder: 'e.g. AI writing, 50 templates, team collaboration', required: true, type: 'textarea' },
@@ -389,7 +443,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'VIDEO_SCRIPT',
         name: 'VIDEO SCRIPT',
         description: 'YouTube / short-form video scripts with hooks',
-        icon: '🎬',
+        icon: Video,
         variables: [
             { key: 'topic', label: 'Video Topic', placeholder: 'e.g. 5 AI tools that will 10x your content output', required: true, type: 'text' },
             { key: 'platform', label: 'Platform', placeholder: 'e.g. YouTube (10 min), TikTok (60 sec)', required: true, type: 'text' },
@@ -401,7 +455,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'SEO_META',
         name: 'SEO META',
         description: 'SEO meta titles and descriptions for any page',
-        icon: '🔍',
+        icon: Search,
         variables: [
             { key: 'page', label: 'Page / Content Title', placeholder: 'e.g. ContentJet — AI Content Generator', required: true, type: 'text' },
             { key: 'keywords', label: 'Target Keywords', placeholder: 'e.g. AI content generator, content marketing tool', required: true, type: 'text' },
@@ -413,7 +467,7 @@ const STATIC_TEMPLATES: Template[] = [
         key: 'CONTENT_REWRITE',
         name: 'CONTENT REWRITE',
         description: 'Rewrite and improve existing content',
-        icon: '✏️',
+        icon: Edit3,
         variables: [
             { key: 'content', label: 'Original Content', placeholder: 'Paste your existing content here...', required: true, type: 'textarea' },
             { key: 'goal', label: 'Rewrite Goal', placeholder: 'e.g. Make it more engaging, Simplify for general audience', required: true, type: 'text' },
