@@ -136,7 +136,7 @@ export const analytics = {
     /**
      * Track a button or CTA click.
      *
-     * @param label  Machine-readable label for the button, e.g. 'hero_cta'
+     * @param label     Machine-readable label for the button, e.g. 'hero_cta'
      * @param location  Where on the page it lives, e.g. 'hero_section'
      *
      * @example analytics.buttonClicked('hero_cta', 'hero_section')
@@ -161,11 +161,16 @@ export const analytics = {
 }
 
 // ─── Global gtag type declaration ─────────────────────────────────────────────
-// Augments the Window interface so TypeScript knows about gtag injected by GA4.
+// Only declare gtag — @next/third-parties already owns dataLayer globally.
+// Using optional (?:) prevents 'identical modifiers' conflicts with the
+// package's own Window augmentation.
 
 declare global {
     interface Window {
-        gtag: (...args: unknown[]) => void
-        dataLayer: unknown[]
+        gtag?: (
+            command: 'event' | 'config' | 'set' | 'js',
+            targetId: string,
+            config?: Record<string, string | number | boolean>
+        ) => void
     }
 }
