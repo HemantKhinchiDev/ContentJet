@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
+  // 🆕 ADDED: Log all incoming params so failures are visible in the terminal
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('🔄 [Auth Callback] Route hit')
+  console.log('📋 [Auth Callback] Params:', { token_hash: token_hash ? '[present]' : null, type, code: code ? '[present]' : null, next })
+  console.log('🌐 [Auth Callback] Origin:', origin)
+
   const cookieStore = await cookies()
 
   // 🔴 IMPORTANT: create redirect response FIRST
@@ -37,6 +43,8 @@ export async function GET(request: NextRequest) {
   // 1️⃣ EMAIL VERIFICATION FLOW
   // ===============================
   if (token_hash && type) {
+    console.log(`📧 [Auth Callback] Attempting email verification (type: ${type})`)
+
     const { data, error } = await supabase.auth.verifyOtp({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type: type as any,
@@ -44,10 +52,21 @@ export async function GET(request: NextRequest) {
     })
 
     if (error) {
+      // 🆕 ADDED: Log full error details and include msg in redirect URL
+      console.error('❌ [Auth Callback] verifyOtp failed:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+      })
       return NextResponse.redirect(
-        `${origin}/login?error=verification_failed`
+        `${origin}/login?error=verification_failed&msg=${encodeURIComponent(error.message)}`
       )
     }
+
+    // 🆕 ADDED: Log success details
+    console.log('✅ [Auth Callback] verifyOtp success')
+    console.log(`   User: ${data?.user?.email}`)
+    console.log(`   Confirmed at: ${data?.user?.email_confirmed_at}`)
 
     // Optional: Prisma sync AFTER successful verification
     if (data?.user?.email) {
@@ -83,20 +102,28 @@ export async function GET(request: NextRequest) {
   // 2️⃣ OAUTH FLOW (Google/GitHub)
   // ===============================
   if (code) {
+    console.log('🔗 [Auth Callback] Attempting OAuth code exchange')
+
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
+      console.error('❌ [Auth Callback] OAuth exchange failed:', {
+        message: error.message,
+        status: error.status,
+      })
       return NextResponse.redirect(
-        `${origin}/login?error=oauth_failed`
+        `${origin}/login?error=oauth_failed&msg=${encodeURIComponent(error.message)}`
       )
     }
 
+    console.log('✅ [Auth Callback] OAuth exchange success')
     return response
   }
 
   // ===============================
   // 3️⃣ INVALID CALLBACK
   // ===============================
+  console.warn('⚠️  [Auth Callback] No valid params (no token_hash, type, or code) — invalid callback')
   return NextResponse.redirect(
     `${origin}/login?error=invalid_callback`
   )

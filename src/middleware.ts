@@ -23,12 +23,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ✅ CRITICAL: In development, bypass Supabase auth check
-  // Fake auth uses localStorage, not Supabase sessions/cookies
-  if (process.env.NODE_ENV === "development") {
-    console.log("🔓 [Middleware] Development mode - allowing access to:", pathname);
-    return NextResponse.next();
-  }
+  // ❌ REMOVED: Dev mode bypass that skipped all Supabase cookie/session logic.
+  // Supabase SSR requires cookies to be read and written on EVERY request,
+  // including in development. The bypass prevented session cookies from being
+  // set after email verification, so the user was never recognised as logged in.
+  console.log(`🛡️  [Middleware] Protecting route: ${pathname}`);
+  console.log(`🌍 [Middleware] Environment: ${process.env.NODE_ENV}`);
+  // 🆕 ADDED: All environments now run the full Supabase session check below.
 
   // Create response object (needed for cookie modifications)
   let res = NextResponse.next({
@@ -78,6 +79,16 @@ export async function middleware(req: NextRequest) {
     data: { user },
     error,
   } = await supabase.auth.getUser();
+
+  // 🆕 ADDED: Log auth result so you can see what's happening in the terminal
+  if (user) {
+    console.log(`✅ [Middleware] Authenticated: ${user.email} → allowing ${pathname}`);
+  } else {
+    console.log(`❌ [Middleware] Not authenticated → redirecting to /login (from ${pathname})`);
+    if (error) {
+      console.log(`   Auth error: ${error.message}`);
+    }
+  }
 
   // Redirect unauthenticated users to login
   if (!user) {

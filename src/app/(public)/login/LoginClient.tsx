@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 🆕 ADDED: useEffect for reading callback error params
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -77,6 +77,32 @@ function ProductionLoginForm() {
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  // 🆕 ADDED: Read error + msg params set by the callback route on failure
+  const [callbackError, setCallbackError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const errorParam = params.get("error");
+    const msgParam = params.get("msg");
+
+    if (errorParam === "verification_failed") {
+      setCallbackError(
+        msgParam
+          ? `❌ Email verification failed: ${msgParam}`
+          : "❌ Email verification failed. The link may have expired — please sign up again."
+      );
+    } else if (errorParam === "oauth_failed") {
+      setCallbackError(
+        msgParam
+          ? `❌ OAuth login failed: ${msgParam}`
+          : "❌ OAuth login failed. Please try again."
+      );
+    } else if (errorParam === "invalid_callback") {
+      setCallbackError("❌ Invalid authentication link. Please try signing in again.");
+    } else if (errorParam) {
+      setCallbackError(msgParam ? `❌ An error occurred: ${msgParam}` : "❌ An error occurred. Please try again.");
+    }
+  }, [params]);
 
   const supabase = supabaseBrowser();
 
@@ -228,6 +254,16 @@ function ProductionLoginForm() {
       {reason === "invalid-callback" && (
         <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
           Invalid authentication callback. Please try again.
+        </div>
+      )}
+
+      {/* 🆕 ADDED: Callback error alert — surfaces errors from /auth/callback?error=... */}
+      {callbackError && (
+        <div
+          className="text-sm text-red-700 text-center p-3 bg-red-50 rounded-lg border border-red-200 mb-5"
+          role="alert"
+        >
+          {callbackError}
         </div>
       )}
 
