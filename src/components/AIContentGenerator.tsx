@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Loader2, Copy, Download, CheckCheck, Sparkles, ChevronRight, Zap, FileText, MessageSquare, Mail, Newspaper, ShoppingBag, Video, Search, Edit3 } from 'lucide-react';
 import { useUsage } from '@/context/UsageContext';
 import { HistoryManager, HistoryItem } from '@/lib/history-manager';
+import { analytics } from '@/lib/analytics'; // 🆕 GA4
 
 // ─── Types (mirroring server types) ──────────────────────────────────────────
 
@@ -132,6 +133,7 @@ function AIContentGeneratorInner() {
     }, []);
 
     const handleGenerate = useCallback(async () => {
+        analytics.buttonClicked('generate_content', 'generator_page'); // 🆕 GA4: click
         setLoading(true);
         setError(null);
         setOutput(null);
@@ -156,6 +158,13 @@ function AIContentGeneratorInner() {
 
             setOutput(data.content);
             setMetadata(data.metadata);
+
+            // 🆕 GA4: track successful generation
+            analytics.contentGenerated({
+                template: selectedTemplate.key,
+                tokens: data.metadata?.tokens?.total ?? 0,
+                durationMs: data.metadata?.durationMs ?? 0,
+            });
 
             // Determine category mapping
             const getCategory = (key: string): HistoryItem['category'] => {

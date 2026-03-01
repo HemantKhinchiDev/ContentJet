@@ -5,6 +5,8 @@ import "./landing/landing.css";
 
 import { AuthProvider } from "@/auth";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { GoogleAnalyticsConditional } from "@/components/GoogleAnalyticsConditional";
+import { CookieBanner } from "@/components/CookieBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +46,8 @@ export default function RootLayout({
           >
             {children}
           </ThemeProvider>
+          <GoogleAnalyticsConditional />
+          <CookieBanner />
         </AuthProvider>
       </body>
     </html>

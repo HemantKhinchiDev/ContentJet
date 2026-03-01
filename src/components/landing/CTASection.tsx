@@ -1,5 +1,7 @@
 'use client'
 
+import { analytics } from '@/lib/analytics'; // 🆕 GA4
+
 export function CTASection() {
     return (
         <section className="max-w-[1436px] mx-auto px-6 py-28">
@@ -18,10 +20,18 @@ export function CTASection() {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
-                    <a href="/signup" className="cursor-pointer px-8 py-3 bg-white text-black text-[14px] font-medium rounded-full hover:bg-white/90 transition-all">
+                    <a
+                        href="/signup"
+                        onClick={() => analytics.buttonClicked('start_building_cta', 'cta_section')}
+                        className="cursor-pointer px-8 py-3 bg-white text-black text-[14px] font-medium rounded-full hover:bg-white/90 transition-all"
+                    >
                         Start building — it&apos;s free
                     </a>
-                    <a href="/contact" className="cursor-pointer px-8 py-3 border border-white/[0.15] bg-white/[0.03] text-white/60 hover:text-white/90 hover:bg-white/[0.06] text-[14px] font-medium rounded-full transition-all">
+                    <a
+                        href="/contact"
+                        onClick={() => analytics.buttonClicked('talk_to_sales', 'cta_section')}
+                        className="cursor-pointer px-8 py-3 border border-white/[0.15] bg-white/[0.03] text-white/60 hover:text-white/90 hover:bg-white/[0.06] text-[14px] font-medium rounded-full transition-all"
+                    >
                         Talk to sales
                     </a>
                 </div>

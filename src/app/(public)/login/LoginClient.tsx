@@ -8,7 +8,15 @@ import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { isDisposableEmail } from "@/lib/isDisposableEmail";
 import { isDevelopment } from "@/lib/env";
+import { analytics } from "@/lib/analytics"; // 🆕 GA4 analytics
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OAuthButton } from "@/components/auth/OAuthButton";
@@ -146,9 +154,11 @@ function ProductionLoginForm() {
 
       if (error) {
         setError(error.message);
+        analytics.buttonClicked('auth_error', 'login_page'); // 🆕 track failures
         return;
       }
 
+      analytics.login('email'); // 🆕 track successful email login
       // Use window.location for guaranteed redirect
       // router.push() can be unreliable during auth state changes
       window.location.href = redirect;
@@ -170,9 +180,11 @@ function ProductionLoginForm() {
 
       if (error) {
         setError(error.message);
+        analytics.buttonClicked('auth_error', 'login_page'); // 🆕
         return;
       }
 
+      analytics.signup('email'); // 🆕 track successful email signup
       setError("Please verify your email to continue.");
     }
   };
@@ -184,6 +196,7 @@ function ProductionLoginForm() {
     const redirectTo = new URL("/auth/callback", window.location.origin);
     redirectTo.searchParams.set("next", redirect);
 
+    analytics.buttonClicked('oauth_google', 'login_page'); // 🆕 GA4
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -199,6 +212,7 @@ function ProductionLoginForm() {
     const redirectTo = new URL("/auth/callback", window.location.origin);
     redirectTo.searchParams.set("next", redirect);
 
+    analytics.buttonClicked('oauth_github', 'login_page'); // 🆕 GA4
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
@@ -210,206 +224,208 @@ function ProductionLoginForm() {
   const isFormDisabled = loading || oauthLoading !== null;
 
   return (
-    <div className="w-full">
-      {/* Logo and heading */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 mb-3">
+    <Card className="rounded-xl border shadow-xl shadow-black/5 dark:shadow-black/50 bg-card">
+      <CardHeader className="text-center pb-4 pt-8 px-8">
+        {/* CJ Logo */}
+        <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300">
           <span className="text-lg font-bold text-white dark:text-zinc-900">CJ</span>
         </div>
-        <h1 className="text-2xl font-semibold text-foreground">
+        <CardTitle className="text-2xl font-semibold tracking-tight">
           {mode === "signin" ? "Welcome back" : "Create your account"}
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        </CardTitle>
+        <CardDescription className="text-sm">
           {mode === "signin"
             ? "Sign in to access your dashboard"
             : "Get started with your free account"}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-5 px-8 pb-8">
+        {/* Status messages */}
+        {reason === "verify-email" && (
+          <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
+            Please verify your email to continue.
+          </div>
+        )}
+
+        {reason === "reset-expired" && (
+          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+            Your password reset link has expired.
+          </div>
+        )}
+
+        {reason === "verification-failed" && (
+          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+            Email verification failed. Please try again.
+          </div>
+        )}
+
+        {reason === "oauth-error" && (
+          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+            Authentication failed. Please try again.
+          </div>
+        )}
+
+        {reason === "invalid-callback" && (
+          <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+            Invalid authentication callback. Please try again.
+          </div>
+        )}
+
+        {/* Callback error alert */}
+        {callbackError && (
+          <div
+            className="text-sm text-red-700 text-center p-3 bg-red-50 rounded-lg border border-red-200"
+            role="alert"
+          >
+            {callbackError}
+          </div>
+        )}
+
+        {/* OAuth buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <OAuthButton
+            provider="Google"
+            icon={<GoogleIcon />}
+            onClick={signInWithGoogle}
+            loading={oauthLoading === "google"}
+            disabled={isFormDisabled}
+            fullWidth={false}
+            className="w-full"
+          >
+            Google
+          </OAuthButton>
+
+          <OAuthButton
+            provider="GitHub"
+            icon={<GitHubIcon />}
+            onClick={signInWithGitHub}
+            loading={oauthLoading === "github"}
+            disabled={isFormDisabled}
+            fullWidth={false}
+            className="w-full"
+          >
+            GitHub
+          </OAuthButton>
+        </div>
+
+        {/* Divider */}
+        <AuthDivider text="Or continue with email" />
+
+        {/* Form */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleEmailAuth();
+          }}
+          className="space-y-4 mt-5"
+        >
+          {/* Email field */}
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-sm font-medium text-foreground">
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearFieldError("email");
+              }}
+              disabled={isFormDisabled}
+              autoComplete="email"
+              error={!!fieldErrors.email}
+            />
+            {fieldErrors.email && (
+              <p className="text-sm text-destructive">{fieldErrors.email}</p>
+            )}
+          </div>
+
+          {/* Password field */}
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="text-sm font-medium text-foreground">
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearFieldError("password");
+              }}
+              disabled={isFormDisabled}
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              error={!!fieldErrors.password}
+            />
+            {fieldErrors.password && (
+              <p className="text-sm text-destructive">{fieldErrors.password}</p>
+            )}
+          </div>
+
+          {/* Forgot password */}
+          {mode === "signin" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => router.push("/reset-password")}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
+          {/* General error */}
+          {error && (
+            <div className="text-sm text-destructive text-center" role="alert">
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            fullWidth
+            loading={loading}
+            disabled={isFormDisabled}
+          >
+            {mode === "signin" ? "Sign in" : "Create account"}
+          </Button>
+        </form>
+
+        {/* Terms */}
+        <p className="text-xs text-center text-muted-foreground pt-2">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="text-foreground hover:underline transition-colors">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-foreground hover:underline transition-colors">
+            Privacy Policy
+          </Link>
         </p>
-      </div>
 
-      {/* Status messages */}
-      {reason === "verify-email" && (
-        <div className="text-sm text-amber-600 dark:text-amber-500 text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50 mb-5">
-          Please verify your email to continue.
+        {/* Bottom nav row */}
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Home
+          </Link>
+          <button
+            type="button"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          >
+            {mode === "signin" ? "Sign up" : "Sign in"}
+          </button>
         </div>
-      )}
-
-      {reason === "reset-expired" && (
-        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
-          Your password reset link has expired.
-        </div>
-      )}
-
-      {reason === "verification-failed" && (
-        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
-          Email verification failed. Please try again.
-        </div>
-      )}
-
-      {reason === "oauth-error" && (
-        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
-          Authentication failed. Please try again.
-        </div>
-      )}
-
-      {reason === "invalid-callback" && (
-        <div className="text-sm text-destructive text-center p-3 bg-destructive/10 rounded-lg border border-destructive/20 mb-5">
-          Invalid authentication callback. Please try again.
-        </div>
-      )}
-
-      {/* 🆕 ADDED: Callback error alert — surfaces errors from /auth/callback?error=... */}
-      {callbackError && (
-        <div
-          className="text-sm text-red-700 text-center p-3 bg-red-50 rounded-lg border border-red-200 mb-5"
-          role="alert"
-        >
-          {callbackError}
-        </div>
-      )}
-
-      {/* OAuth buttons */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <OAuthButton
-          provider="Google"
-          icon={<GoogleIcon />}
-          onClick={signInWithGoogle}
-          loading={oauthLoading === "google"}
-          disabled={isFormDisabled}
-          fullWidth={false}
-          className="w-full"
-        >
-          Google
-        </OAuthButton>
-
-        <OAuthButton
-          provider="GitHub"
-          icon={<GitHubIcon />}
-          onClick={signInWithGitHub}
-          loading={oauthLoading === "github"}
-          disabled={isFormDisabled}
-          fullWidth={false}
-          className="w-full"
-        >
-          GitHub
-        </OAuthButton>
-      </div>
-
-      {/* Divider */}
-      <AuthDivider text="Or continue with email" />
-
-      {/* Form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleEmailAuth();
-        }}
-        className="space-y-4 mt-5"
-      >
-        {/* Email field */}
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              clearFieldError("email");
-            }}
-            disabled={isFormDisabled}
-            autoComplete="email"
-            error={!!fieldErrors.email}
-          />
-          {fieldErrors.email && (
-            <p className="text-sm text-destructive">{fieldErrors.email}</p>
-          )}
-        </div>
-
-        {/* Password field */}
-        <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Password
-          </label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              clearFieldError("password");
-            }}
-            disabled={isFormDisabled}
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            error={!!fieldErrors.password}
-          />
-          {fieldErrors.password && (
-            <p className="text-sm text-destructive">{fieldErrors.password}</p>
-          )}
-        </div>
-
-        {/* Forgot password */}
-        {mode === "signin" && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => router.push("/reset-password")}
-            >
-              Forgot password?
-            </button>
-          </div>
-        )}
-
-        {/* General error */}
-        {error && (
-          <div className="text-sm text-destructive text-center" role="alert">
-            {error}
-          </div>
-        )}
-
-        {/* Submit */}
-        <Button
-          type="submit"
-          fullWidth
-          loading={loading}
-          disabled={isFormDisabled}
-        >
-          {mode === "signin" ? "Sign in" : "Create account"}
-        </Button>
-      </form>
-
-      {/* Terms */}
-      <p className="text-xs text-center text-muted-foreground mt-6">
-        By continuing, you agree to our{" "}
-        <Link href="/terms" className="text-foreground hover:underline transition-colors">
-          Terms
-        </Link>{" "}
-        and{" "}
-        <Link href="/privacy" className="text-foreground hover:underline transition-colors">
-          Privacy Policy
-        </Link>
-      </p>
-
-      {/* Bottom nav row */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Back to Home
-        </Link>
-        <button
-          type="button"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-        >
-          {mode === "signin" ? "Sign up" : "Sign in"}
-        </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

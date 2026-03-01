@@ -23,13 +23,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ❌ REMOVED: Dev mode bypass that skipped all Supabase cookie/session logic.
-  // Supabase SSR requires cookies to be read and written on EVERY request,
-  // including in development. The bypass prevented session cookies from being
-  // set after email verification, so the user was never recognised as logged in.
-  console.log(`🛡️  [Middleware] Protecting route: ${pathname}`);
-  console.log(`🌍 [Middleware] Environment: ${process.env.NODE_ENV}`);
-  // 🆕 ADDED: All environments now run the full Supabase session check below.
+  // ✅ DEV MODE: Allow access if the dev-auth-token cookie is present.
+  // DevLoginForm sets this cookie on successful dev sign-in.
+  // We check the cookie instead of bypassing all Supabase logic, so that
+  // real email verification flows can still be tested in development.
+  if (process.env.NODE_ENV === "development") {
+    const devToken = req.cookies.get("dev-auth-token");
+    if (devToken?.value === "true") {
+      console.log(`🛠️  [Middleware] Dev auth token found → allowing ${pathname}`);
+      return NextResponse.next();
+    }
+    // No dev token → fall through to Supabase check (allows email verify testing)
+    console.log(`🔍 [Middleware] No dev token, running Supabase check for: ${pathname}`);
+  }
 
   // Create response object (needed for cookie modifications)
   let res = NextResponse.next({

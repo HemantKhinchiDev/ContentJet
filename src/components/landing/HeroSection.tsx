@@ -2,6 +2,7 @@
 
 import { ChevronRight } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { analytics } from '@/lib/analytics'; // 🆕 GA4
 
 const DashboardMockup = dynamic(() => import('./DashboardMockup').then(mod => mod.DashboardMockup), {
     ssr: false,
@@ -29,6 +30,7 @@ export function HeroSection() {
                 <div className="flex justify-center mb-8">
                     <a
                         href="#"
+                        onClick={() => analytics.buttonClicked('announcement_pill', 'hero_section')}
                         className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05] transition group"
                     >
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#5e6ad2]/20 text-[#818cf8] text-[11px] font-medium uppercase tracking-wide">
