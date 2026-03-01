@@ -15,7 +15,8 @@ import {
   Loader2,
   CreditCard,
   Wand2,
-  LayoutDashboard
+  LayoutDashboard,
+  X,
 } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import { useAuth } from "@/auth/auth.context";
@@ -67,18 +68,38 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  // ── Desktop sidebar state ────────────────────────────────────────────────────
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── Mobile drawer state ──────────────────────────────────────────────────────
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
 
   const isExpanded = isPinned || isHovered;
 
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when drawer open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
   const handleMouseEnter = () => {
     if (isPinned) return;
-
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
     }, SIDEBAR_EXPAND_DELAY);
@@ -100,32 +121,29 @@ export default function DashboardLayout({
     };
   }, []);
 
-  // Redirect logic - only after auth is ready
+  // Redirect logic
   useEffect(() => {
     if (!ready) return;
-
-    if (status === "guest") {
-      router.replace("/login");
-    }
-
-    if (status === "unverified") {
-      router.replace("/login?reason=verify-email");
-    }
+    if (status === "guest") router.replace("/login");
+    if (status === "unverified") router.replace("/login?reason=verify-email");
   }, [ready, status, router]);
 
   // Fetch subscription once authenticated
   useEffect(() => {
     if (status !== "auth") return;
     fetch("/api/subscriptions")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setSubscription(data))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setSubscription(data))
       .catch(() => { });
   }, [status]);
 
   const handleManageBilling = useCallback(async () => {
     setPortalLoading(true);
     try {
-      const res = await fetch("/api/stripe/create-portal-session", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const res = await fetch("/api/stripe/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } catch {
@@ -135,7 +153,7 @@ export default function DashboardLayout({
     }
   }, []);
 
-  // Show loading while auth is initializing
+  // ── Loading / guard states ───────────────────────────────────────────────────
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -147,23 +165,132 @@ export default function DashboardLayout({
     );
   }
 
-  // Don't render dashboard for non-authenticated users
-  if (status !== "auth") {
-    return null;
-  }
+  if (status !== "auth") return null;
 
   const userEmail = user?.email ?? "";
   const userInitial = userEmail.charAt(0).toUpperCase() || "?";
+  const planLabel = subscription
+    ? subscription.plan_type === "free"
+      ? "Free Plan"
+      : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`
+    : "Free Plan";
+
+  // ── Shared nav link renderer ─────────────────────────────────────────────────
+  const renderNavLink = (item: (typeof navItems)[0], expanded: boolean) => {
+    const isActive =
+      item.href === "/dashboard"
+        ? pathname === "/dashboard"
+        : pathname.startsWith(item.href);
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
+          isActive
+            ? "bg-accent text-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+        )}
+      >
+        <item.icon className="h-4 w-4 flex-shrink-0" />
+        <span
+          className={cn(
+            "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
+            expanded ? "w-auto opacity-100" : "w-0 opacity-0"
+          )}
+        >
+          {item.label}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <UsageProvider>
       <TooltipProvider delayDuration={0}>
         <div className="min-h-screen flex bg-background">
+
+          {/* ── Mobile drawer backdrop ──────────────────────────────────────── */}
+          {mobileOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+          )}
+
+          {/* ── Mobile drawer ───────────────────────────────────────────────── */}
+          <div
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-background border-r border-border transition-transform duration-300 ease-in-out md:hidden",
+              mobileOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
+            {/* Drawer header */}
+            <div className="h-14 flex items-center justify-between border-b border-border px-4">
+              <div className="flex items-center gap-2.5">
+                <div className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300">
+                  <span className="text-sm font-bold text-white dark:text-zinc-900">CJ</span>
+                </div>
+                <span className="font-semibold text-sm text-foreground tracking-tight">
+                  ContentJet
+                </span>
+              </div>
+              <button
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+                className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Drawer nav */}
+            <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+              {navItems.map((item) => renderNavLink(item, true))}
+            </nav>
+
+            {/* Drawer footer */}
+            <div className="px-2 py-2 border-t border-border space-y-1">
+              <Link
+                href="/help"
+                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+              >
+                <HelpCircle className="h-4 w-4 flex-shrink-0" />
+                Help &amp; Support
+              </Link>
+
+              <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md">
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {userInitial}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate leading-tight">
+                    {userEmail || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-tight">{planLabel}</p>
+                </div>
+              </div>
+
+              {subscription?.stripe_customer_id && (
+                <button
+                  onClick={handleManageBilling}
+                  disabled={portalLoading}
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer w-full text-left disabled:opacity-50"
+                >
+                  <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
+                  {portalLoading ? "Loading…" : "Manage billing"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
           <aside
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={cn(
-              "border-r border-border bg-muted/20 flex flex-col transition-all duration-300 ease-in-out",
+              "hidden md:flex border-r border-border bg-muted/20 flex-col transition-all duration-300 ease-in-out",
               isExpanded ? "w-52" : "w-14"
             )}
           >
@@ -208,34 +335,7 @@ export default function DashboardLayout({
 
             <nav className="flex-1 px-2 py-3 space-y-0.5">
               {navItems.map((item) => {
-                const isActive =
-                  item.href === "/dashboard"
-                    ? pathname === "/dashboard"
-                    : pathname.startsWith(item.href);
-
-                const navLink = (
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
-                      isActive
-                        ? "bg-accent text-foreground font-medium"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-
-                    <span
-                      className={cn(
-                        "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                        isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-
+                const navLink = renderNavLink(item, isExpanded);
                 if (!isExpanded) {
                   return (
                     <Tooltip key={item.href}>
@@ -246,7 +346,6 @@ export default function DashboardLayout({
                     </Tooltip>
                   );
                 }
-
                 return <div key={item.href}>{navLink}</div>;
               })}
             </nav>
@@ -260,18 +359,13 @@ export default function DashboardLayout({
                       className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
                     >
                       <HelpCircle className="h-4 w-4 flex-shrink-0" />
-                      <span
-                        className={cn(
-                          "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                          isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                        )}
-                      >
-                        Help & Support
+                      <span className={cn("whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
+                        Help &amp; Support
                       </span>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
-                    <p>Help & Support</p>
+                    <p>Help &amp; Support</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
@@ -280,13 +374,8 @@ export default function DashboardLayout({
                   className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-pointer"
                 >
                   <HelpCircle className="h-4 w-4 flex-shrink-0" />
-                  <span
-                    className={cn(
-                      "whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden",
-                      isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                    )}
-                  >
-                    Help & Support
+                  <span className={cn("whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
+                    Help &amp; Support
                   </span>
                 </Link>
               )}
@@ -298,23 +387,15 @@ export default function DashboardLayout({
                       <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
                         {userInitial}
                       </div>
-
-                      <div
-                        className={cn(
-                          "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
-                          isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                        )}
-                      >
-                        <p className="text-sm font-medium text-foreground truncate leading-tight">
-                          {userEmail || "User"}
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
+                      <div className={cn("flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
+                        <p className="text-sm font-medium text-foreground truncate leading-tight">{userEmail || "User"}</p>
+                        <p className="text-xs text-muted-foreground leading-tight capitalize">{planLabel}</p>
                       </div>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
                     <p className="font-medium">{userEmail || "User"}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{subscription ? subscription.plan_type : 'free'} Plan</p>
+                    <p className="text-xs text-muted-foreground">{planLabel}</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
@@ -322,22 +403,13 @@ export default function DashboardLayout({
                   <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
                     {userInitial}
                   </div>
-
-                  <div
-                    className={cn(
-                      "flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden",
-                      isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-                    )}
-                  >
-                    <p className="text-sm font-medium text-foreground truncate leading-tight">
-                      {userEmail || "User"}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-tight capitalize">{subscription ? (subscription.plan_type === 'free' ? 'Free Plan' : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`) : 'Free Plan'}</p>
+                  <div className={cn("flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-hidden", isExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
+                    <p className="text-sm font-medium text-foreground truncate leading-tight">{userEmail || "User"}</p>
+                    <p className="text-xs text-muted-foreground leading-tight">{planLabel}</p>
                   </div>
                 </div>
               )}
 
-              {/* Manage Subscription — only shown when expanded and has paid plan */}
               {isExpanded && subscription?.stripe_customer_id && (
                 <button
                   id="manage-billing-btn"
@@ -353,9 +425,43 @@ export default function DashboardLayout({
           </aside>
 
           <div className="flex-1 flex flex-col min-w-0">
-            <Header />
-            <main className="flex-1 overflow-auto bg-muted/10">{children}</main>
+            <Header onMenuToggle={() => setMobileOpen(true)} />
+            <main className="flex-1 overflow-auto bg-muted/10 pb-16 md:pb-0">
+              {children}
+            </main>
           </div>
+
+          {/* ── Mobile bottom tab bar ───────────────────────────────────────── */}
+          <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background md:hidden">
+            <div className="flex items-center justify-around">
+              {navItems.map((item) => {
+                const isActive =
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex flex-col items-center gap-0.5 px-3 py-2.5 text-xs transition-colors flex-1",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-5 w-5 transition-colors",
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                      )}
+                    />
+                    <span className="leading-tight">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
         </div>
       </TooltipProvider>
     </UsageProvider>

@@ -44,19 +44,19 @@ export function FeaturesSection() {
 
     return (
         <section className="max-w-[1436px] mx-auto px-6 py-28">
-            {/* Section Label */}
+            {/* 🆕 SEO: Optimized Section Label */}
             <div className="text-[13px] text-[#5e6ad2] uppercase tracking-[0.15em] font-medium mb-4">
-                Features
+                Why Choose ContentJet AI Content Generator?
             </div>
 
-            {/* Heading */}
+            {/* 🆕 SEO: Optimized Heading */}
             <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-[500] tracking-[-0.04em] text-white/95 mb-4 max-w-2xl">
-                Built for modern<br />product teams
+                Powerful AI Writing Tools<br />for Every Content Need
             </h2>
 
             {/* Subtitle */}
             <p className="text-[16px] text-white/[0.30] mb-12 max-w-xl">
-                Every feature is built to help you move faster and ship better products.
+                Every feature is built to help you create content faster and ship better campaigns.
             </p>
 
             {/* Feature Cards Grid */}

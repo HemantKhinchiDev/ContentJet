@@ -40,18 +40,19 @@ export function TestimonialsSection() {
     return (
         <section className="max-w-[1436px] mx-auto px-6 py-24">
             {/* Section Label */}
+            {/* 🆕 SEO: Optimized Section Label */}
             <div className="text-[13px] text-[#5e6ad2] uppercase tracking-[0.15em] font-medium mb-4 text-center">
-                Testimonials
+                Who Uses ContentJet?
             </div>
 
-            {/* Heading */}
+            {/* 🆕 SEO: Optimized Heading */}
             <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-[500] tracking-[-0.04em] text-white/95 mb-4 text-center">
-                Loved by the best<br />product teams
+                Trusted by 10,000+<br />Content Creators and Marketers
             </h2>
 
             {/* Subtitle */}
             <p className="text-[16px] text-white/[0.30] mb-12 text-center">
-                Teams of all sizes trust Contentjet to build their products.
+                Teams of all sizes trust ContentJet to build their content engine.
             </p>
 
             {/* Tech Logo Bar */}

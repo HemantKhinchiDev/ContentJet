@@ -41,17 +41,16 @@ export function HeroSection() {
                     </a>
                 </div>
 
-                {/* Heading */}
-                <h1 className="text-[clamp(2.5rem,6vw,5rem)] font-[550] leading-[1.05] tracking-[-0.04em] text-left max-w-[820px]">
-                    <span className="text-white">Launch AI SaaS</span>
+                {/* 🆕 SEO: Optimized H1 and subtitle for target keywords */}
+                <h1 className="text-[clamp(2.5rem,5.5vw,4.5rem)] font-[550] leading-[1.05] tracking-[-0.04em] text-left max-w-[820px]">
+                    <span className="text-white">AI Content Generator</span>
                     <br />
-                    <span className="text-white">in Days, </span>
-                    <span className="text-white/[0.45]">Not Months</span>
+                    <span className="text-white">Create Blogs &amp; Ads, </span>
+                    <span className="text-white/[0.45]">in Seconds</span>
                 </h1>
 
-                {/* Subtitle */}
-                <p className="text-[16px] text-white/[0.35] font-light max-w-[520px] mt-6 leading-relaxed">
-                    Production-ready Next.js boilerplate with Auth, Stripe, AI and SEO built-in.
+                <p className="text-[16px] text-white/[0.35] font-light max-w-[580px] mt-6 leading-relaxed">
+                    ContentJet is the most powerful AI content generator for marketers and builders. Create high-quality blog posts, social media content, email campaigns, and ad copy 10x faster with our intelligent AI writing assistant.
                 </p>
             </div>
 

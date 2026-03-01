@@ -1,0 +1,21 @@
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Disallow private/internal pages
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /_next/
+Disallow: /admin/
+
+# Allow important assets
+Allow: /api/og
+Allow: /_next/static/
+Allow: /_next/image/
+
+# Sitemap location
+Sitemap: https://contentjet.vercel.app/sitemap.xml
+
+# Host (preferred domain)
+Host: https://contentjet.vercel.app
